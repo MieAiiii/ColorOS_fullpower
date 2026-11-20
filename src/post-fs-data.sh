@@ -1,6 +1,6 @@
 #!/system/bin/sh
 # ============================================================
-#  ColorOS 满血特性 6.0 —— 开机注入
+#  ColorOS 满血特性 6.0.2 —— 开机注入
 #  作者：三重 / 酷安@MieAi
 #
 #  核心层（动画/模糊）在 system.prop，本脚本不重复。
@@ -90,7 +90,7 @@ apply() {
 
 # ---------------- 功能层 ----------------
 {
-  echo "=== ColorOS 满血特性 6.0  $(date '+%Y-%m-%d %H:%M:%S') ==="
+  echo "=== ColorOS 满血特性 6.0.2  $(date '+%Y-%m-%d %H:%M:%S') ==="
   echo "机型: ${MODEL:-未知}"
   echo "ColorOS: ${ROMRAW:-未知}  (主版本 ${ROM_MAJ})"
   echo "高刷标志 persist.oplus.display.vrr = [${VRR:-空}]"

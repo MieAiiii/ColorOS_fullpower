@@ -1,6 +1,6 @@
 #!/system/bin/sh
 # ============================================================
-#  ColorOS 满血特性 6.0 —— 安装期脚本
+#  ColorOS 满血特性 6.0.2 —— 安装期脚本
 #  作者：三重 / 酷安@MieAi
 #
 #  6.0 起快充表不再内置机型参数：安装时只检查目录是否存在，
@@ -9,7 +9,7 @@
 
 ui_print " "
 ui_print "=============================================="
-ui_print " ColorOS 满血特性 6.0"
+ui_print " ColorOS 满血特性 6.0.2"
 ui_print " 三重 / 酷安@MieAi"
 ui_print "=============================================="
 ui_print " 设备: $(getprop ro.product.marketname)$(getprop ro.product.model)"
@@ -56,7 +56,7 @@ if [ ! -f "$CFG" ] && [ -f "$OLD_CFG" ]; then
 fi
 if [ ! -f "$CFG" ]; then
   cat > "$CFG" <<'CFGEOF'
-# ColorOS 满血特性 6.0 配置
+# ColorOS 满血特性 6.0.2 配置
 # 1 = 启用，0 = 关闭。改完重启生效，也可以在 WebUI 里点开关。
 # 核心层（动画 / 模糊）在 system.prop 里常驻，不受这里控制。
 

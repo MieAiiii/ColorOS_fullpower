@@ -176,8 +176,10 @@ daemon() {
 
     if [ "$ENABLED" != "1" ]; then
       echo "disabled soc=$soc" > "$STATE"
+      sleep_secs=30
     elif [ "$soc" -ge "$TARGET_SOC" ] 2>/dev/null; then
       echo "released soc=$soc target=$TARGET_SOC" > "$STATE"
+      sleep_secs=30
     else
       echo "guarding soc=$soc target=$TARGET_SOC" > "$STATE"
       clear_flag "$OCB/cool_down" "0" "cool_down"
@@ -202,8 +204,9 @@ daemon() {
       fi
       # 每 20 个周期检查一次体积
       [ $((tick % 20)) -eq 0 ] && gc
+      sleep_secs=3
     fi
-    sleep 3
+    sleep "$sleep_secs"
   done
 }
 
