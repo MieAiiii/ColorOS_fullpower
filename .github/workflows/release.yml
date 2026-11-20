@@ -52,6 +52,8 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
+          name: ColorOS 满血特性 ${{ github.ref_name }}
+          body_path: docs/releases/${{ github.ref_name }}.md
           files: ColorOS_fullpower_*.zip
-          generate_release_notes: true
+          generate_release_notes: false
           fail_on_unmatched_files: true
