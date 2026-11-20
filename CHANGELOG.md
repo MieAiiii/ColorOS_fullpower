@@ -1,5 +1,11 @@
 # 更新日志
 
+## v6.0.1（2026-11-20）
+
+- 仓库开启 Release immutability 后重新发布，满足 KernelSU 收录的不可变 Release 要求
+- 模块功能与 v6.0 相同；`versionCode` 提升到 `601`
+- Release 资产仍为单个 `ColorOS_fullpower_v6.0.1.zip`
+
 ## v6.0（2026-11-20）
 
 - 快充参数全自适应：开机探测实际 fastchg 根、`PROJECT`、协议段、峰值电流、表最高温，不再写死 `25061 / 8000mA / 53℃ / PMG110`

@@ -4,7 +4,7 @@
 >
 > 作者：三重 / 酷安@MieAi
 >
-> 当前版本：`6.0`（versionCode `600`）
+> 当前版本：`6.0.1`（versionCode `601`）
 
 ## 简介
 
@@ -118,6 +118,12 @@ WebUI 中的温度墙滑块上限来自本机 `profile.env` 的 `wall_max`，不
 8. **测试环境**。本项目主要在 OPPO K15 Pro+（PMG110 / ColorOS V17.0.0 / Android 17）验证；其他机型请先看 WebUI 的 `supported / project / wall_max / max_current` 再决定是否开启。
 
 ## 更新日志
+
+### v6.0.1（2026-11-20）
+
+- 为满足 KernelSU 收录要求，在仓库开启 Release immutability 后重新发布
+- 模块功能与 v6.0 相同，仅将 `versionCode` 提升到 `601`，确保新 Release 为不可变资产
+- Release 继续只包含一个模块 zip，APK 已包含在 zip 内
 
 ### v6.0（2026-11-20）
 
