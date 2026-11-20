@@ -13,9 +13,23 @@
 模块最初合并了两条独立工作流：
 
 - 满血充电：fastchg 温控表叠加 + `peak` 息屏满充守护
-- 晕动舒缓：原厂圆点 UI + LSPosed 桥接 APK
+- 晕动舒缓：原厂圆点 UI + LSPosed 桥接 APK。该功能来源于 [MieAiiii/oplus-antidizzy-module](https://github.com/MieAiiii/oplus-antidizzy-module)（MIT License）；本仓库负责集成、统一 WebUI 和参数桥接
 
 6.0 起，快充部分不再写死 `25061 / 8000mA / 53℃ / PMG110` 等机型参数，改为在刷入/开机时读取本机快充表并生成对应温度墙。
+
+## 界面预览
+
+以下截图是模块 WebUI 的三个主要页面。截图使用演示数据，实际数值以当前机型和充电状态为准。
+
+<p align="center">
+  <a href="docs/images/webui-home.png"><img src="docs/images/webui-home.png" width="260" alt="WebUI 主页"></a>
+  <a href="docs/images/webui-charge.png"><img src="docs/images/webui-charge.png" width="260" alt="满血快充页"></a>
+  <a href="docs/images/webui-dizzy.png"><img src="docs/images/webui-dizzy.png" width="260" alt="晕动舒缓页"></a>
+</p>
+
+从 KernelSU 管理器进入模块 WebUI 后：主页先确认机型、系统版本和温度墙；点底部「满血快充」确认挂载状态；点「晕动舒缓」检查 LSPosed 桥接和车辆识别。
+
+<p align="center"><sub>左：主页 · 中：满血快充 · 右：晕动舒缓</sub></p>
 
 ## 功能
 
@@ -27,7 +41,7 @@
 | 温度墙 | 自动墙按本机表峰值电流最后出现的温度 + 5..21℃ 抬升；上限由本机表最高温推导，不写死 53℃ |
 | peak 满充守护 | 息屏后按 `TARGET_SOC` 清除充电限流/降流标志，记录满充 CSV；使用 `setsid` 守护，避免被 KernelSU `service.sh` 退出时带走 |
 | 系统级温控 | 可选关闭用户态温控策略（`tempctl on`）；关闭时卸载本模块自己的层并恢复 `horae` 等温控服务 |
-| 晕动舒缓显示 | 原厂 AntiDizzy 圆点渲染 + LSPosed 桥接；由 `ENABLE_ANTIDIZZY` 控制 |
+| 晕动舒缓显示 | 原厂 AntiDizzy 圆点渲染 + LSPosed 桥接；功能来源于 [MieAiiii/oplus-antidizzy-module](https://github.com/MieAiiii/oplus-antidizzy-module)；由 `ENABLE_ANTIDIZZY` 控制 |
 | WebUI | Miuix / HyperOS 风格单文件 WebUI；温度墙滑块上限、快充项目、电流等信息均来自本机 `profile.env` |
 
 ## 原理
@@ -74,7 +88,9 @@ WALL_MAX=530   DEFAULT_WALL=530  TABLE_LADDER_MAX=580
 
 ### 4. 晕动舒缓
 
-`files/AntiDizzyBridge.apk` 提供 LSPosed 桥接；模块通过特性声明与 Settings 写入启用原厂 AntiDizzy 圆点。默认 `ENABLE_ANTIDIZZY=0`，需要在 WebUI 开启并在 LSPosed 中启用模块、勾选系统框架后重启。
+本项目的晕动舒缓显示能力来源于 [MieAiiii/oplus-antidizzy-module](https://github.com/MieAiiii/oplus-antidizzy-module)（MIT License）。上游项目负责原厂 AntiDizzy 特性的补全与 LSPosed 桥接；本仓库负责把它集成进 ColorOS 满血特性模块，提供统一 WebUI、参数持久化和开关控制。
+
+`files/AntiDizzyBridge.apk` 提供 LSPosed 桥接；模块通过特性声明与 Settings 写入启用原厂 AntiDizzy 圆点。默认 `ENABLE_ANTIDIZZY=0`，需要在 WebUI 开启并在 LSPosed 中启用模块、勾选系统框架后重启。上游项目更新时，可以单独替换 `files/AntiDizzyBridge.apk` 后重新刷入。
 
 ## 安装与使用
 
@@ -90,6 +106,41 @@ WALL_MAX=530   DEFAULT_WALL=530  TABLE_LADDER_MAX=580
 2. 在 KernelSU 管理器中安装模块，重启。
 3. 打开模块 WebUI，确认快充状态为 `supported=1`，检查项目号、协议段、温度墙是否符合本机表。
 4. 如需晕动舒缓，在 WebUI 开启 `ENABLE_ANTIDIZZY`，在 LSPosed 中启用 `AntiDizzy Bridge` 并勾选系统框架，重启。
+
+### 快速上手（按页面）
+
+#### 1. 主页：先确认设备与温度墙
+
+1. 从 KernelSU 管理器 → 模块 → 本模块 → 打开 WebUI。普通浏览器没有 KernelSU 执行接口，会提示“未检测到执行接口”。
+2. 顶部设备卡应显示本机型号和 ColorOS 版本；如果显示“未知设备”，先不要改快充参数。
+3. “系统级温控”默认关闭。它是高风险开关，只建议在跑分、高温或明确需要时临时打开；日常保持关闭。
+4. “充电温控”里的当前温度墙来自本机 `profile.env`，不是固定 53℃。先看“适配信息”的项目号、电流和协议段数，再决定是否手动调整。
+5. 动画与模糊、功能补齐按需开关；这些键写入 `config.conf`，改动后重启生效。
+
+#### 2. 满血快充：先看“已生效”，再看功率
+
+1. 点底部“满血快充”。右上角状态应为绿色“已生效”；显示“未识别”或“部分生效”时先排查，不要直接拉温度墙。
+2. “模块状态”里确认默认温控表、项目目录、峰值模式文件都已挂载/补齐，SELinux 标签显示“24/24 正确”。
+3. “当前策略”应显示本机项目号、协议段数、满血电流、降档起点和生效表大小。以 K15 Pro+ 为例会是 `25061 · 9 段`、`8000 mA`、`53.0 ℃`。
+4. “峰值保持”打开后，守护进程会在到达目标电量前压制额外降档；目标电量可在 60–100% 之间调整，默认 100%。守护状态显示“守护中”即正常。
+5. “实时充电”里重点看电池电流、电池电压、适配器输入、电池温度和 `fast_chg_type`；`cool_down=0` 表示当前没有额外降档标志。
+6. 想看真实峰值，请拔掉电脑 USB，接原装 80W SuperVOOC 充电器，并从较低电量开始、保持息屏。电脑 USB 只有 5V/0.5A，不能用来判断快充是否生效；80% 以后电流下降也属于正常后段。
+
+#### 3. 晕动舒缓：LSPosed 是前提
+
+1. 先在主页打开“晕动舒缓显示”（`ENABLE_ANTIDIZZY=1`），重启。
+2. 在 LSPosed 中启用 `AntiDizzy Bridge`，作用域勾选“系统框架”，再次重启。只装 APK 不启用作用域不会生效。
+3. 打开“晕动舒缓”页，确认“桥接状态”有 `state: active`，车辆识别显示“在车上”或“未检测到车辆”。
+4. 模式建议先用“仅车辆运动”，只有识别到车辆运动才生效；需要持续演示时再切“常驻显示”。
+5. 灵敏度推荐起点：摆动幅度 `1.0×`、前后向增强 `2.5×`、静止门限 `0.08`。眩晕未消先加摆动幅度；画面晃眼则降低。
+6. “测试”里的正弦摆动、车辆运动、模拟走路等只用于验证，看完记得切回“关闭测试”。
+7. 如果开关打开但画面没有变化，按顺序检查：LSPosed 是否启用桥接、是否勾选系统框架、是否重启、桥接日志是否有 `state: active`。上游实现与更新见 [MieAiiii/oplus-antidizzy-module](https://github.com/MieAiiii/oplus-antidizzy-module)。
+
+#### 4. 诊断与恢复
+
+- “诊断 → 开机日志”可以查看本次开机的写入、挂载与跳过明细。
+- 关闭“快充表叠加”并重启，可撤销快充表的运行时挂载；彻底回原厂可卸载模块后重启。
+- 晕动参数保存在系统 secure 设置，卸载模块时会随模块清理逻辑恢复；卸载前建议先在 WebUI 记下自己改过的值。
 
 ### 常用配置
 
@@ -116,6 +167,28 @@ WebUI 中的温度墙滑块上限来自本机 `profile.env` 的 `wall_max`，不
 6. **晕动舒缓依赖 LSPosed**。仅安装 APK 不会生效；需要在 LSPosed 中启用并勾选系统框架。
 7. **备份**。首次安装会保留 `backup/original_backup.txt`；升级会继承已有 config，不覆盖原始备份。
 8. **测试环境**。本项目主要在 OPPO K15 Pro+（PMG110 / ColorOS V17.0.0 / Android 17）验证；其他机型请先看 WebUI 的 `supported / project / wall_max / max_current` 再决定是否开启。
+
+## 常见问题
+
+### WebUI 提示“未检测到 KernelSU 执行接口”
+
+必须从 KernelSU 管理器 → 模块 → 本模块 → 打开进入。直接用浏览器打开 `index.html` 不会注入 `ksu.exec`，只能看到演示数据。
+
+### 快充页显示“未识别”或“部分生效”
+
+先确认模块已刷入并重启；再看“模块状态”的默认表、项目目录、峰值模式文件和 SELinux 标签。若本机没有 `*_THERMAL_CONTROL` 段，模块会跳过快充叠加而不是硬改未知表。不要同时安装其他 fastchg 温控模块，同路径 bind mount 会互踩。
+
+### 显示“已生效”但充电很慢
+
+先看供电条件：电脑 USB 口通常只有 5V/0.5A，不能作为快充测试；需要原装 80W SuperVOOC 充电器。电量高于 80% 后进入恒压后段，电流下降是正常的。若低电量、息屏、原装充电器下仍然很慢，再到“实时充电”看 `fast_chg_type`、`cool_down` 和电池温度，判断是协议未识别、额外降档还是温度墙先触发。
+
+### 晕动舒缓开关打开但无效果
+
+按顺序检查：LSPosed 是否启用 `AntiDizzy Bridge`、作用域是否勾选“系统框架”、是否重启、晕动页“桥接状态”是否有 `state: active`。只安装 APK 不会生效。实现来源与更新见 [MieAiiii/oplus-antidizzy-module](https://github.com/MieAiiii/oplus-antidizzy-module)。
+
+### 温度墙上限为什么不是固定的 53℃
+
+53℃ 只是 K15 Pro+（项目 `25061`）当前表推导出的值。其他机型会按本机峰值电流最后出现的温度和表内最高温计算 `WALL_MAX`；WebUI 滑块上限随之变化，不要照抄别机的数值。
 
 ## 更新日志
 
@@ -173,6 +246,7 @@ module.yaml             KernelSU 收录元数据
 .github/workflows/release.yml
 TECHNICAL_REPORT.md     详细技术档案
 tools/validate_webui.py WebUI 结构校验
+docs/images/            README 界面截图
 ```
 
 ## 构建与发布
@@ -188,7 +262,7 @@ python tools/validate_webui.py
 ## 致谢
 
 - 原满血充电工作流：`息屏快充修复`
-- 晕动舒缓：`oplus-antidizzy-module`
+- 晕动舒缓：[MieAiiii/oplus-antidizzy-module](https://github.com/MieAiiii/oplus-antidizzy-module)（MIT License）
 - 作者：三重 / 酷安@MieAi
 
 ## 免责声明
