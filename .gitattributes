@@ -1,0 +1,6 @@
+*.sh text eol=lf
+*.awk text eol=lf
+*.prop text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf

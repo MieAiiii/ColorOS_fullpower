@@ -1,0 +1,270 @@
+/* ============================================================
+   ColorOS 满血特性 WebUI —— 设计令牌层（三页共享）
+   规范来源（不自由发挥）：
+   · miuix (compose-miuix-ui/miuix) 官方令牌：Colors.kt / TextStyles.kt
+   · HyperOS 2.0 设置实拍：浅灰页底 + 白底分区 + 灰细描边 + 36dp 彩色圆角图标块
+   · HyperOS 官方「柔光玻璃」语义：玻璃仅用于 chrome 层，通透度自适应内容
+   ============================================================ */
+
+:root{
+  /* ---- miuix Colors.kt（light）---- */
+  --primary:#3482FF;
+  --on-primary:#FFFFFF;
+  --primary-container:#5D9BFF;
+  --error:#E94634;
+  --background:#FFFFFF;
+  --surface:#F7F7F7;                 /* 页面底 */
+  --surface-variant:#FFFFFF;         /* 卡片 */
+  --on-surface:#000000;
+  --on-surface-secondary:rgba(0,0,0,.80);
+  --on-surface-summary:rgba(0,0,0,.60);
+  --on-surface-actions:rgba(0,0,0,.40);
+  --on-background-variant:#8C93B0;   /* 组标题 */
+  --secondary-container:#F0F0F0;     /* 次级按钮/滑轨容器 */
+  --on-secondary-container:#A9A9A9;
+  --outline:#D9D9D9;
+  --divider:#E0E0E0;
+  --slider-track:rgba(0,0,0,.06);
+  --window-dimming:rgba(0,0,0,.30);
+
+  /* ---- 玻璃（chrome 层专用）---- */
+  --glass-bg:rgba(255,255,255,.72);
+  --glass-bg-strong:rgba(255,255,255,.88);
+  --glass-blur:blur(28px) saturate(180%);
+  --glass-edge:rgba(255,255,255,.55);
+  --glass-hairline:rgba(0,0,0,.06);
+
+  /* ---- 字阶（miuix TextStyles.kt）---- */
+  --fs-title1:32px; --fs-title2:24px; --fs-title3:20px; --fs-title4:18px;
+  --fs-main:17px; --fs-headline:16px; --fs-body:14px;
+  --fs-footnote:13px; --fs-footnote2:11px;
+
+  /* ---- 几何 ---- */
+  --r-card:18px; --r-row-icon:12px; --r-btn:12px;
+  --row-icon:36px;
+  --pad-x:20px;
+  --line-left:68px;                  /* 分割线左缩进 = 16pad + 36icon + 16gap */
+
+  --shadow-card:0 1px 2px rgba(0,0,0,.03), 0 4px 16px rgba(0,0,0,.04);
+}
+
+@media (prefers-color-scheme:dark){
+  :root{
+    --surface:#000000;
+    --surface-variant:#1C1C1E;
+    --on-surface:#FFFFFF;
+    --on-surface-secondary:rgba(255,255,255,.80);
+    --on-surface-summary:rgba(255,255,255,.60);
+    --on-surface-actions:rgba(255,255,255,.40);
+    --on-background-variant:#9AA1BC;
+    --secondary-container:#2C2C2E;
+    --on-secondary-container:#8E8E93;
+    --outline:#3A3A3C;
+    --divider:#38383A;
+    --slider-track:rgba(255,255,255,.12);
+    --window-dimming:rgba(0,0,0,.50);
+    --glass-bg:rgba(28,28,30,.72);
+    --glass-bg-strong:rgba(28,28,30,.90);
+    --glass-edge:rgba(255,255,255,.14);
+    --glass-hairline:rgba(255,255,255,.08);
+    --shadow-card:0 1px 2px rgba(0,0,0,.30), 0 4px 16px rgba(0,0,0,.25);
+  }
+}
+
+/* ================= 基础 ================= */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{overflow-x:clip;scroll-behavior:smooth}
+body{
+  background:var(--surface);color:var(--on-surface);
+  font-family:system-ui,-apple-system,"MiSans","HarmonyOS Sans SC","Noto Sans SC","PingFang SC",sans-serif;
+  font-size:var(--fs-main);line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:calc(96px + env(safe-area-inset-bottom,0px));
+}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+
+/* ================= 页面骨架 ================= */
+.hero{padding:calc(20px + env(safe-area-inset-top,0px)) var(--pad-x) 10px}
+.hero h1{font-size:var(--fs-title1);font-weight:700;letter-spacing:.2px}
+.hero .sub{margin-top:4px;font-size:var(--fs-footnote);color:var(--on-surface-summary)}
+main{padding:6px var(--pad-x) 0}
+
+/* 组：标题 + 白卡 */
+.group-title{margin:22px 4px 8px;font-size:var(--fs-body);font-weight:600;color:var(--on-background-variant);display:flex;align-items:center;gap:8px}
+.group-note{margin:0 4px 10px;font-size:var(--fs-footnote);color:var(--on-surface-summary);line-height:1.55}
+
+/* HyperOS 卡：白底 + 细描边（非纯阴影堆叠） */
+.card{
+  background:var(--surface-variant);
+  border-radius:var(--r-card);
+  border:.5px solid var(--outline);
+  box-shadow:var(--shadow-card);
+  overflow:hidden;
+}
+.card + .card{margin-top:10px}
+.card-summary{padding:4px 16px 14px;font-size:var(--fs-footnote);color:var(--on-surface-actions);line-height:1.6}
+
+/* ================= 行 ================= */
+.row{
+  display:flex;align-items:center;gap:16px;
+  min-height:64px;padding:12px 16px;position:relative;
+}
+.row:active{background:var(--secondary-container)}
+.row .row-main{flex:1;min-width:0}
+.row-title{font-size:var(--fs-main);font-weight:500}
+.row-summary{margin-top:2px;font-size:var(--fs-footnote);color:var(--on-surface-summary);line-height:1.5}
+.row-summary.warn{color:var(--error)}
+.row-value{font-size:var(--fs-headline);font-weight:500;color:var(--on-surface-secondary);white-space:nowrap}
+.row-value .unit{font-size:var(--fs-footnote);color:var(--on-surface-actions)}
+.row.align-top{align-items:flex-start}
+
+/* HyperOS 彩色圆角图标块 36dp */
+.row-icon{
+  width:var(--row-icon);height:var(--row-icon);border-radius:var(--r-row-icon);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.row-icon svg{display:block}
+.t-blue{background:linear-gradient(180deg,#4E96FF,#2E76F0)}
+.t-green{background:linear-gradient(180deg,#5BC26A,#3BA84B)}
+.t-orange{background:linear-gradient(180deg,#FFA94D,#F58A1F)}
+.t-red{background:linear-gradient(180deg,#FF6B5E,#E94634)}
+.t-purple{background:linear-gradient(180deg,#A37BF5,#8256E8)}
+.t-teal{background:linear-gradient(180deg,#3ECBC4,#22A9A2)}
+.t-gray{background:linear-gradient(180deg,#B9BDC7,#9AA0AC)}
+
+.row.align-top + .row::before,
+.row + .row.align-top::before{display:none}
+.row.no-divider::before{display:none}
+
+/* ================= 开关（miuix Switch）================= */
+.switch{
+  width:52px;height:32px;border-radius:16px;flex-shrink:0;position:relative;
+  background:var(--outline);transition:background .22s ease;
+}
+.switch .knob{
+  position:absolute;top:2px;left:2px;width:28px;height:28px;border-radius:50%;
+  background:#FFFFFF;box-shadow:0 1px 3px rgba(0,0,0,.22);
+  transition:left .28s cubic-bezier(.34,1.56,.64,1);
+}
+.switch.on{background:var(--primary)}
+.switch.on .knob{left:22px}
+
+/* ================= 滑块（miuix Slider：等宽滑轨 + 蓝色粗条 + 白色滑块） ================= */
+.slider{position:relative;height:44px;margin:2px 20px 6px;touch-action:none}
+.slider-track{
+  position:absolute;left:0;right:0;top:50%;height:28px;transform:translateY(-50%);
+  border-radius:14px;background:rgba(0,0,0,.08);
+}
+.slider-fill{
+  position:absolute;left:0;top:50%;height:28px;transform:translateY(-50%);
+  border-radius:14px;background:var(--primary);
+}
+.slider-thumb{
+  position:absolute;top:50%;width:28px;height:28px;border-radius:50%;
+  transform:translate(-50%,-50%);background:#FFFFFF;
+  box-shadow:0 1px 4px rgba(0,0,0,.25), 0 0 0 .5px rgba(0,0,0,.06);
+}
+.slider-marks{display:flex;justify-content:space-between;margin:0 20px 4px;font-size:var(--fs-footnote2);color:var(--on-surface-actions)}
+
+/* 步进器 */
+.stepper{display:flex;align-items:center;gap:10px}
+.stepper button{
+  width:30px;height:30px;border-radius:10px;background:var(--secondary-container);
+  color:var(--on-surface-secondary);font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;
+}
+.stepper button:active{background:var(--divider)}
+
+/* ================= 按钮 ================= */
+.card-row-btns{display:flex;gap:10px;padding:4px 16px 14px}
+.btn{
+  flex:1;height:42px;border-radius:var(--r-btn);background:var(--secondary-container);
+  color:var(--on-surface);font-size:var(--fs-main);font-weight:500;
+  display:flex;align-items:center;justify-content:center;transition:transform .12s ease;
+}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--primary);color:var(--on-primary)}
+.btn.danger{background:rgba(233,70,52,.12);color:var(--error)}
+
+/* ================= 徽标 ================= */
+.badge{
+  font-size:var(--fs-footnote2);font-weight:600;padding:3px 8px;border-radius:8px;
+  background:var(--secondary-container);color:var(--on-secondary-container);white-space:nowrap;
+}
+.badge.danger{background:rgba(233,70,52,.14);color:var(--error)}
+.badge.warn{background:rgba(255,138,30,.16);color:#C9660A}
+.badge.ok{background:rgba(59,168,75,.14);color:#2E8B3D}
+
+/* 单选（模式选择） */
+.seg{display:flex;gap:8px;padding:2px 16px 14px}
+.seg button{
+  flex:1;min-height:52px;padding:9px 10px;border-radius:var(--r-btn);
+  background:var(--secondary-container);
+  color:var(--on-surface-secondary);font-size:var(--fs-body);font-weight:500;line-height:1.35;
+  overflow:visible;
+}
+.seg .desc{display:block;font-size:var(--fs-footnote2);font-weight:400;margin-top:3px;opacity:.75;line-height:1.4}
+.seg button.on{background:var(--primary);color:var(--on-primary)}
+/* 6 个测试模式：两列三行，避免 1/2/5 旧布局挤成一条 */
+.seg-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg-grid button{width:100%}
+
+/* ================= chrome：柔光玻璃 ================= */
+.appbar{
+  position:sticky;top:0;z-index:40;
+  padding:calc(10px + env(safe-area-inset-top,0px)) var(--pad-x) 12px;
+  background:var(--glass-bg);
+  -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+}
+.appbar::before{ /* 顶边镜面高光（不依赖 backdrop-filter 的层也可见） */
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,0) 30%);
+  opacity:.6;
+}
+@media (prefers-color-scheme:dark){ .appbar::before{background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,0) 30%)} }
+.appbar::after{content:"";position:absolute;left:0;right:0;bottom:0;height:.5px;background:transparent;transition:background .2s}
+.appbar.scrolled::after{background:var(--glass-hairline)}
+.appbar .bar-inner{position:relative;display:flex;align-items:center;gap:10px;min-height:34px}
+.appbar h2{font-size:var(--fs-title4);font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:font-size .2s}
+.appbar.scrolled h2{font-size:var(--fs-main)}
+.appbar .bar-sub{font-size:var(--fs-footnote2);color:var(--on-surface-actions);white-space:nowrap;max-height:0;opacity:0;overflow:hidden;transition:max-height .2s,opacity .2s}
+.appbar.scrolled .bar-sub{max-height:0}
+
+/* 返回钮（子页面） */
+.backbtn{
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  background:var(--secondary-container);display:flex;align-items:center;justify-content:center;
+}
+
+/* toast */
+.toast{
+  position:fixed;left:50%;bottom:calc(110px + env(safe-area-inset-bottom,0px));transform:translate(-50%,16px);
+  background:var(--window-dimming);color:#fff;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  padding:9px 18px;border-radius:22px;font-size:var(--fs-footnote);
+  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:60;max-width:80vw;text-align:center;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* 全宽提示条（浏览器无桥接时） */
+.alert{
+  margin:10px var(--pad-x) 0;padding:12px 14px;border-radius:14px;
+  background:rgba(233,70,52,.10);color:var(--error);
+  font-size:var(--fs-footnote);line-height:1.6;
+}
+.alert b{display:block;margin-bottom:3px}
+
+/* 子页面全屏层（主页面内嵌功能页） */
+.page{
+  position:fixed;inset:0;z-index:50;background:var(--surface);
+  transform:translateX(100%);transition:transform .28s cubic-bezier(.3,.9,.3,1);
+  display:flex;flex-direction:column;
+}
+.page.open{transform:translateX(0)}
+.page .page-body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+iframe{border:0;width:100%;height:100%;display:block;background:transparent}
+
+/* 滚动条隐藏但可滚 */
+.scroll-x{overflow-x:auto;scrollbar-width:none}
+.scroll-x::-webkit-scrollbar{display:none}
+
+/* 页脚 */
+.footnote{text-align:center;font-size:var(--fs-footnote2);color:var(--on-surface-actions);padding:26px 32px 10px;line-height:1.7}

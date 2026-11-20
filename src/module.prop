@@ -1,0 +1,6 @@
+id=coloros_fullpower
+name=ColorOS 满血特性 6.0
+version=6.0
+versioncode=600
+author=三重 / 酷安@MieAi
+description=动画与模糊拉满、机型缺失特性补齐；内置自适应满血快充（开机探测实际 fastchg 根、PROJECT、协议段与峰值电流，按本机表生成温度墙，不写死机型/电流/温度）、晕动舒缓显示、系统级温控。Miuix/HyperOS 风格 WebUI。不含机型/安全伪装。

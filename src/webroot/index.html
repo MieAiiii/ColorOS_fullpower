@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>ColorOS 满血特性</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+/* ============ 主页 ============ */
+.device-card{padding:16px}
+.device-card .model{font-size:var(--fs-title3);font-weight:700}
+.device-card .rom{margin-top:3px;font-size:var(--fs-footnote);color:var(--on-surface-summary)}
+.device-card .ver{position:absolute;right:16px;top:16px}
+
+.entry .row{min-height:60px}
+.row.no-arrow::after{display:none}
+.entry .row::after{
+  content:"";width:8px;height:8px;border-right:2px solid var(--on-surface-actions);
+  border-top:2px solid var(--on-surface-actions);transform:rotate(45deg);
+  position:absolute;right:18px;top:50%;margin-top:-5px;border-radius:1px;
+}
+
+.pagebar{
+  position:fixed;left:0;right:0;bottom:0;z-index:45;
+  padding:10px 18px calc(12px + env(safe-area-inset-bottom,0px));
+  display:flex;gap:10px;
+  background:var(--glass-bg);
+  -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+}
+.pagebar::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(0deg,rgba(255,255,255,.5),rgba(255,255,255,0) 40%);
+}
+@media (prefers-color-scheme:dark){.pagebar::before{background:linear-gradient(0deg,rgba(255,255,255,.08),rgba(255,255,255,0) 40%)}}
+.pagebar button{
+  flex:1;height:44px;border-radius:14px;position:relative;
+  background:var(--surface-variant);border:.5px solid var(--outline);
+  font-size:var(--fs-body);font-weight:500;color:var(--on-surface);
+  box-shadow:0 2px 10px rgba(0,0,0,.06);
+}
+.pagebar button:active{transform:scale(.97)}
+
+.log-pre{
+  margin:0 0 12px;padding:14px;border-radius:14px;
+  background:var(--surface-variant);border:.5px solid var(--outline);
+  font:12px/1.7 ui-monospace,Menlo,Consolas,monospace;
+  color:var(--on-surface-secondary);white-space:pre-wrap;word-break:break-all;
+  max-height:52vh;overflow:auto;
+}
+
+/* ============ 晕动页 ============ */
+.dot{width:10px;height:10px;border-radius:50%;background:var(--outline);flex-shrink:0;transition:background .3s}
+.dot.on{background:#34C759;box-shadow:0 0 6px rgba(52,199,89,.6)}
+input.num{
+  width:86px;height:38px;border-radius:10px;border:.5px solid var(--outline);
+  background:var(--surface);color:var(--on-surface);
+  font-size:var(--fs-body);text-align:center;font-weight:500;
+}
+input.num:focus{outline:none;border-color:var(--primary)}
+.dlg{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;background:var(--window-dimming)}
+.dlg.show{display:flex}
+.dlg-box{width:min(320px,86vw);background:var(--surface-variant);border-radius:22px;padding:22px 20px 14px;text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.25)}
+.dlg-box h3{font-size:var(--fs-headline);font-weight:600}
+.dlg-box p{margin-top:8px;font-size:var(--fs-footnote);color:var(--on-surface-summary);line-height:1.6}
+.dlg-btns{display:flex;gap:10px;margin-top:18px}
+.dlg-btns button{flex:1;height:40px;border-radius:12px;font-size:var(--fs-body);font-weight:500;background:var(--secondary-container)}
+.dlg-btns button.primary{background:var(--primary);color:var(--on-primary)}
+
+/* ============ 快充页 ============ */
+.badge-val{font-size:var(--fs-footnote);font-weight:600;padding:4px 10px;border-radius:10px}
+.badge-val.ok{background:rgba(59,168,75,.14);color:#2E8B3D}
+.badge-val.bad{background:rgba(233,70,52,.14);color:var(--error)}
+.power-hero{padding:18px 16px 16px;text-align:center}
+.power-num{font-size:var(--fs-title1);font-weight:700;letter-spacing:-.5px}
+.power-unit{font-size:var(--fs-footnote);color:var(--on-surface-actions);margin-left:2px}
+.power-side{margin-top:6px;font-size:var(--fs-footnote);color:var(--on-surface-summary)}
+.power-side b{color:var(--on-surface)}
+.row-value.ok{color:#2E8B3D}
+.row-value.bad{color:var(--error)}
+.row-value.warn{color:#C9660A}
+</style>
+</head>
+<body>
+
+<!-- ================= 主页顶部 ================= -->
+<header class="appbar" id="appbar">
+  <div class="bar-inner">
+    <h2>满血特性</h2>
+    <span class="bar-sub" id="barSub"></span>
+    <span class="badge">6.0</span>
+  </div>
+</header>
+
+<div class="hero">
+  <h1>满血特性</h1>
+  <div class="sub" id="devLine">正在读取设备状态…</div>
+</div>
+
+<div class="alert" id="noBridge" style="display:none">
+  <b>未检测到 KernelSU 执行接口</b>
+  请从 KernelSU 管理器 → 模块 → 本模块 → 打开 进入本页；普通浏览器里没有该接口。
+  <span id="bridgeHint"></span>
+</div>
+
+<main>
+
+  <!-- 设备 -->
+  <div class="card device-card" id="topCard">
+    <span class="badge ver">v6.0</span>
+    <div class="model" id="devModel">—</div>
+    <div class="rom" id="devRom">—</div>
+  </div>
+
+  <!-- 系统级温控 -->
+  <div class="group-title">系统级温控 <span class="badge danger">高风险</span></div>
+  <div class="group-note">高温时<b style="color:var(--on-surface)">不降频、不降亮度与刷新率、充电不降速</b>的一体开关。立即生效，无需重启。</div>
+  <div class="card">
+    <div class="row" id="stRow">
+      <div class="row-icon t-red"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M12 3v3M12 18v3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M3 12h3M18 12h3M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="4"/></svg></div>
+      <div class="row-main">
+        <div class="row-title">禁用系统温控</div>
+        <div class="row-summary">清空温控策略 · 关闭高温保护 · 停用 horae</div>
+      </div>
+      <div class="switch" id="stSwitch"><span class="knob"></span></div>
+    </div>
+    <div class="row">
+      <div class="row-main"><div class="row-title">horae</div></div>
+      <div class="row-value" id="stHorae">—</div>
+    </div>
+    <div class="row">
+      <div class="row-main"><div class="row-title">策略覆盖</div></div>
+      <div class="row-value" id="stMounts">—</div>
+    </div>
+    <div class="card-summary">⚠ 开启后高温保护被关闭：极端负载下芯片可能长时间高热，加速元件老化、外壳烫手。仍保留内核 118.8℃ 熔断、电池/充电温度保护。厂商温控策略为加密文件，本功能以覆盖方式使其失效，原厂文件不受损，卸载即恢复。</div>
+  </div>
+
+  <!-- 充电温控 -->
+  <div class="group-title">充电温控</div>
+  <div class="group-note">温度墙 = 阶梯降速从哪个温度开始。往下拉会<b style="color:var(--on-surface)">更早降速</b>，往上拉则<b style="color:var(--on-surface)">更晚才开始降</b>，让每一档都跑满。档位与电流本身不变，全部来自本机原厂表。</div>
+  <div class="card">
+    <div class="row no-divider">
+      <div class="row-icon t-teal"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M12 3v2M12 19v2M5 5l1.4 1.4M17.6 17.6 19 19M3 12h2M19 12h2M5 19l1.4-1.4M17.6 6.4 19 5"/></svg></div>
+      <div class="row-main">
+        <div class="row-title">当前温度墙</div>
+        <div class="row-summary">阶梯降速起点温度 · 自动值按本机峰值电流选</div>
+      </div>
+      <div class="row-value" id="twNow">—</div>
+    </div>
+    <div class="row">
+      <div class="row-main"><div class="row-title">适配信息</div><div class="row-summary">从本机 /odm 表读取，不按机型写死</div></div>
+      <div class="row-value" id="twMeta">—</div>
+    </div>
+    <div class="slider" id="twSlider">
+      <div class="slider-track"><div class="slider-fill" id="twFill"></div></div>
+      <div class="slider-thumb" id="twThumb"></div>
+    </div>
+    <div class="slider-marks"><span>44℃</span><span id="twMarkMid">—</span><span id="twMarkMax">—</span></div>
+    <div class="row">
+      <div class="row-main">
+        <div class="row-title">目标温度墙</div>
+        <div class="row-summary" id="twRangeNote">范围按本机表自动识别；自动值按峰值电流与满流温度换算</div>
+      </div>
+      <div class="row-value"><span id="twVal">—</span><span class="unit"> ℃</span></div>
+    </div>
+    <div class="card-row-btns">
+      <button class="btn primary" id="twApply">应用温度墙</button>
+      <button class="btn" id="twAuto">自动适配</button>
+      <button class="btn" id="twReset">恢复原始表</button>
+    </div>
+    <div class="card-summary">只改本模块生成表，不写真实 /odm；应用后当前 HAL 立即读取新文件，无需重启。恢复原始表只撤销本次叠加，彻底回原厂请关闭「满血快充叠加」并重启。</div>
+  </div>
+
+  <!-- 动画与模糊 -->
+  <div class="group-title">动画与模糊</div>
+  <div class="group-note">核心层常驻生效，不设开关。这些键在本机型上没有「关掉更安全」的场景，做成可关只是假选项。</div>
+  <div class="card">
+    <div class="row">
+      <div class="row-icon t-blue"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M3 12c2-4 4 4 6 0s4 4 6 0 3-3 6-2"/></svg></div>
+      <div class="row-main"><div class="row-title">系统动画档位</div><div class="row-summary">1 = 增强动效（社区动效补齐推荐值）</div></div>
+      <div class="row-value" id="vAnim">—</div>
+    </div>
+    <div class="row">
+      <div class="row-icon t-blue"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5-9-5ZM3 16l9 5 9-5"/></svg></div>
+      <div class="row-main"><div class="row-title">框架动画档位</div><div class="row-summary">3 = 完整动效；被厂商砍动效的机型常为 1/2</div></div>
+      <div class="row-value" id="vFw">—</div>
+    </div>
+    <div class="row">
+      <div class="row-icon t-purple"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2"><circle cx="9" cy="10" r="5"/><circle cx="15" cy="14" r="5"/></svg></div>
+      <div class="row-main"><div class="row-title">背景模糊</div><div class="row-summary">通知栏 / 控制中心等窗口背景毛玻璃</div></div>
+      <div class="row-value" id="vBlur">—</div>
+    </div>
+    <div class="row">
+      <div class="row-icon t-purple"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4Z"/></svg></div>
+      <div class="row-main"><div class="row-title">音量条模糊</div><div class="row-summary">音量条毛玻璃（0 = 开启；1 = 关闭）</div></div>
+      <div class="row-value" id="vVol">—</div>
+    </div>
+    <div class="row">
+      <div class="row-icon t-green"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 9h18"/></svg></div>
+      <div class="row-main"><div class="row-title">壁纸动画</div><div class="row-summary">桌面壁纸切换时的过渡动效</div></div>
+      <div class="row-value" id="vWp">—</div>
+    </div>
+    <div class="row">
+      <div class="row-icon t-green"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="7" y="3" width="10" height="18" rx="3"/><path d="M10 18h4"/></svg></div>
+      <div class="row-main"><div class="row-title">小窗模糊快照</div><div class="row-summary">自由小窗 / 分屏的背景模糊</div></div>
+      <div class="row-value" id="vFlex">—</div>
+    </div>
+  </div>
+
+  <!-- 功能补齐 -->
+  <div class="group-title">功能补齐</div>
+  <div class="group-note">补齐本机未出厂声明的机型能力。改动写入 config.conf，<b style="color:var(--on-surface)">重启生效</b>。</div>
+  <div class="card">
+    <div class="row" data-key="ENABLE_CAMERA">
+      <div class="row-icon t-teal"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="4"/><path d="M4 7h3l2-2h6l2 2h3v13H4V7Z"/></svg></div>
+      <div class="row-main"><div class="row-title">相机能力补齐</div><div class="row-summary">实况照片 · 快享 · 延迟拍摄 · Lumo</div></div>
+      <div class="switch on" data-sw="ENABLE_CAMERA"><span class="knob"></span></div>
+    </div>
+    <div class="row" data-key="ENABLE_AUDIO">
+      <div class="row-icon t-orange"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M3 12h2l2-6 3 12 3-9 2 5 2-2h4"/></svg></div>
+      <div class="row-main"><div class="row-title">扬声器清灰排水</div><div class="row-summary">声波清灰，进水后可用</div></div>
+      <div class="switch on" data-sw="ENABLE_AUDIO"><span class="knob"></span></div>
+    </div>
+    <div class="row" data-key="ENABLE_RECORDER">
+      <div class="row-icon t-red"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="#fff" stroke="none"/></svg></div>
+      <div class="row-main"><div class="row-title">120 帧录屏</div><div class="row-summary">高刷机型录制更顺滑</div></div>
+      <div class="switch on" data-sw="ENABLE_RECORDER"><span class="knob"></span></div>
+    </div>
+  </div>
+
+  <!-- 实验性 -->
+  <div class="group-title">实验性</div>
+  <div class="card">
+    <div class="row" data-key="ENABLE_LEGACY">
+      <div class="row-icon t-gray"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg></div>
+      <div class="row-main">
+        <div class="row-title">旧版模糊键</div>
+        <div class="row-summary">gaussianlevel / panoramic_aod 等。仅 ColorOS 16 及以下可能有消费者；17 上已确认 0 命中，开启无效果</div>
+      </div>
+      <div class="switch" data-sw="ENABLE_LEGACY"><span class="knob"></span></div>
+    </div>
+    <div class="card-summary">实验项，默认关闭。不确定就不要开。</div>
+  </div>
+
+  <!-- 子功能 -->
+  <div class="group-title">子功能</div>
+  <div class="group-note">两个内置子功能，点击进入各自的完整设置页。</div>
+  <div class="card entry">
+    <div class="row no-arrow" id="entryDizzy">
+      <div class="row-icon t-purple"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M2 12c3-7 7 7 10 0s5 5 10 0"/><path d="M2 18c3-7 7 7 10 0s5 5 10 0"/></svg></div>
+      <div class="row-main">
+        <div class="row-title">晕动舒缓显示 <span class="badge">子功能</span></div>
+        <div class="row-summary">乘车看屏幕减少眩晕，灵敏度可调</div>
+      </div>
+      <div class="switch" data-sw="ENABLE_ANTIDIZZY"><span class="knob"></span></div>
+    </div>
+    <div class="row" id="entryCharge">
+      <div class="row-icon t-orange"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg></div>
+      <div class="row-main">
+        <div class="row-title">满血快充 <span class="badge">子功能</span></div>
+        <div class="row-summary">把充电功率稳住每个档位，电量门槛可调</div>
+      </div>
+    </div>
+    <div class="row no-arrow" data-key="ENABLE_PEAK">
+      <div class="row-icon t-orange"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v10H4zM8 11h8M8 14h5"/></svg></div>
+      <div class="row-main">
+        <div class="row-title">快充表叠加</div>
+        <div class="row-summary">关闭后重启不再挂载温控表，也不启动峰值守护</div>
+      </div>
+      <div class="switch on" data-sw="ENABLE_PEAK"><span class="knob"></span></div>
+    </div>
+    <div class="card-summary" style="padding-top:0">晕动功能需在 LSPosed 启用桥接并勾选「系统框架」。快充表叠加关闭只影响充电，不影响其他功能。</div>
+  </div>
+
+  <!-- 诊断 -->
+  <div class="group-title">诊断</div>
+  <div class="card entry">
+    <div class="row" id="entryLog">
+      <div class="row-icon t-gray"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5"/></svg></div>
+      <div class="row-main"><div class="row-title">开机日志</div><div class="row-summary">查看本次开机的写入与跳过明细</div></div>
+    </div>
+  </div>
+
+  <div class="footnote">ColorOS 满血特性 · 三重 / 酷安@MieAi<br>所有改动均可随卸载模块完全复原</div>
+</main>
+
+<!-- 底部操作栏 -->
+<div class="pagebar">
+  <button id="btnDizzy">晕动舒缓</button>
+  <button id="btnCharge">满血快充</button>
+  <button id="btnLog">诊断</button>
+</div>
+
+<!-- ================= 晕动舒缓显示 ================= -->
+<div class="page" id="page-dizzy">
+  <header class="appbar">
+    <div class="bar-inner">
+      <button class="backbtn" data-close="page-dizzy"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M14 6l-6 6 6 6"/></svg></button>
+      <h2>晕动舒缓显示</h2>
+      <span class="dot" id="dotVeh"></span>
+    </div>
+  </header>
+  <div class="page-body">
+  <div class="hero">
+    <h1 style="font-size:var(--fs-title2)">晕动舒缓显示</h1>
+    <div class="sub">乘车看屏幕时，画面随车辆运动反向微移，抵消前庭冲突，从源头减少眩晕。</div>
+  </div>
+  <main>
+    <div class="group-title">运行状态</div>
+    <div class="card">
+      <div class="row no-divider">
+        <div class="row-icon t-purple"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l2-5 3 10 2-7 2 2h5"/></svg></div>
+        <div class="row-main">
+          <div class="row-title">桥接状态</div>
+          <div class="row-summary" id="dzStatus">正在读取…</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="row-main"><div class="row-title">车辆识别</div><div class="row-summary">依据车辆运动判定是否启用</div></div>
+        <div class="row-value" id="vehState">—</div>
+      </div>
+      <div class="row">
+        <div class="row-main"><div class="row-title">当前模式</div></div>
+        <div class="row-value" id="modeState">—</div>
+      </div>
+    </div>
+
+    <div class="group-title">功能开关</div>
+    <div class="card">
+      <div class="row no-divider">
+        <div class="row-icon t-green"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11a5 5 0 0 1 10 0v4l2 3H5l2-3v-4ZM10 21h4"/></svg></div>
+        <div class="row-main">
+          <div class="row-title">晕动舒缓显示</div>
+          <div class="row-summary">开启后系统在乘车场景自动生效</div>
+        </div>
+        <div class="switch" id="swEnable"><span class="knob"></span></div>
+      </div>
+      <div class="card-summary">保存约 2 秒生效，无需重启。若开启无效，请确认 LSPosed 已启用「AntiDizzy Bridge」并勾选「系统框架」。</div>
+    </div>
+
+    <div class="group-title">生效模式</div>
+    <div class="card">
+      <div class="seg" style="padding-top:12px">
+        <button id="m1">仅车辆运动<span class="desc">识别到车辆运动后生效</span></button>
+        <button id="m2">常驻显示<span class="desc">不判定车辆，始终生效</span></button>
+      </div>
+    </div>
+
+    <div class="group-title">灵敏度</div>
+    <div class="card">
+      <div class="row no-divider">
+        <div class="row-main"><div class="row-title">摆动幅度</div><div class="row-summary">画面反向位移的整体倍率</div></div>
+        <div class="row-value" id="gainV">—</div>
+      </div>
+      <div class="slider" id="gainSlider">
+        <div class="slider-track"><div class="slider-fill"></div></div>
+        <div class="slider-thumb"></div>
+      </div>
+      <div class="slider-marks"><span>0.2×</span><span>5×</span><span>10×</span></div>
+      <div class="row no-divider">
+        <div class="row-main"><div class="row-title">前后向增强</div><div class="row-summary">急加减速时的额外补偿倍率</div></div>
+        <div class="row-value" id="gainyV">—</div>
+      </div>
+      <div class="slider" id="gainySlider">
+        <div class="slider-track"><div class="slider-fill"></div></div>
+        <div class="slider-thumb"></div>
+      </div>
+      <div class="slider-marks"><span>0.5×</span><span>5×</span><span>10×</span></div>
+      <div class="row no-divider">
+        <div class="row-main"><div class="row-title">静止门限</div><div class="row-summary">低于此运动强度视为静止；拉到最左为关闭</div></div>
+        <div class="row-value" id="gateV">—</div>
+      </div>
+      <div class="slider" id="gateSlider">
+        <div class="slider-track"><div class="slider-fill"></div></div>
+        <div class="slider-thumb"></div>
+      </div>
+      <div class="slider-marks"><span>关闭</span><span>0.15</span><span>0.30</span></div>
+      <div class="card-summary">推荐起点：幅度 1.0×、前后向 2.5×、门限 0.08。眩晕未消先加「摆动幅度」，画面晃眼则降低。</div>
+    </div>
+
+    <div class="group-title">车辆判定参数</div>
+    <div class="group-note">判定「当前在车上」的五项传感器阈值。普通使用不需要动；只有车辆识别持续不准时才调整。</div>
+    <div class="card">
+      <div class="row no-divider"><div class="row-main"><div class="row-title">运动强度阈值</div><div class="row-summary">veh_rms · 加速度均方根判定</div></div><input class="num" id="veh_rms" inputmode="decimal"></div>
+      <div class="row"><div class="row-main"><div class="row-title">低频占比阈值</div><div class="row-summary">veh_low · 1–6 Hz 能量占比，越高越严格</div></div><input class="num" id="veh_low" inputmode="decimal"></div>
+      <div class="row"><div class="row-main"><div class="row-title">转向判定</div><div class="row-summary">veh_rot · 角速度阈值</div></div><input class="num" id="veh_rot" inputmode="decimal"></div>
+      <div class="row"><div class="row-main"><div class="row-title">步态判定</div><div class="row-summary">veh_step · 步行步频阈值，用于拒绝误判</div></div><input class="num" id="veh_step" inputmode="decimal"></div>
+      <div class="row"><div class="row-main"><div class="row-title">持续确认时长</div><div class="row-summary">veh_hold · 连续满足多少秒才算上车</div></div><input class="num" id="veh_hold" inputmode="decimal"></div>
+      <div class="card-row-btns">
+        <button class="btn primary" id="vehSave">保存车辆参数</button>
+      </div>
+      <div class="card-summary">默认值：0.12 / 0.55 / 0.12 / 0.45 / 8 秒。保存约 2 秒生效。</div>
+    </div>
+
+    <div class="group-title">测试</div>
+    <div class="group-note">验证补偿是否工作。开启任一测试后画面会强制做出对应运动，看完记得关闭。数值对应 Bridge 的真实语义。</div>
+    <div class="card">
+      <div class="seg seg-grid" style="padding-top:12px">
+        <button id="t0">关闭测试</button>
+        <button id="t1">正弦摆动</button>
+        <button id="t2">车辆运动</button>
+        <button id="t3">模拟走路</button>
+        <button id="t4">手持微动</button>
+        <button id="t5">竖持漂移</button>
+      </div>
+      <div class="card-summary">正弦摆动：画面应平滑往复；车辆运动：模拟真实车辆；模拟走路：步态判定应拒绝触发；手持微动：手持抑制应拒绝触发；竖持漂移：模拟重力泄漏，圆点应纹丝不动。</div>
+    </div>
+
+    <div class="group-title">恢复</div>
+    <div class="card">
+      <div class="card-row-btns" style="padding-top:14px">
+        <button class="btn danger" id="btnReset">恢复全部默认参数</button>
+      </div>
+      <div class="card-summary">把灵敏度、门限、车辆参数与测试开关全部重置为出厂推荐值。</div>
+    </div>
+
+    <div class="group-title">使用说明</div>
+    <div class="card">
+      <div class="card-summary" style="padding-top:12px">
+        <b style="color:var(--on-surface);font-size:var(--fs-body)">这是什么</b><br>
+        乘车时手机画面与内耳前庭感受到的运动不一致，是晕车看屏幕眩晕的根源。本功能让画面随车辆运动做反向微移，把两者重新对齐。<br><br>
+        <b style="color:var(--on-surface);font-size:var(--fs-body)">怎么用</b><br>
+        ① 打开上方开关；② 模式保持「仅车辆运动」；③ 上车后屏幕内容出现轻微反向浮动即生效，停车自动消失。<br><br>
+        <b style="color:var(--on-surface);font-size:var(--fs-body)">不舒服怎么办</b><br>
+        画面晃眼 → 降低摆动幅度；补偿不足 → 升高幅度；静止时也在动 → 升高静止门限或改用「仅车辆运动」模式。<br><br>
+        <b style="color:var(--on-surface);font-size:var(--fs-body)">依赖</b><br>
+        需要 LSPosed：模块「AntiDizzy Bridge」启用并勾选「系统框架」。参数写入系统 secure 设置，随模块卸载恢复原状。
+      </div>
+    </div>
+    <div class="footnote">参数保存于系统 secure 设置 · 三重 / 酷安@MieAi</div>
+  </main>
+  </div>
+</div>
+
+<!-- ================= 满血快充 ================= -->
+<div class="page" id="page-charge">
+  <header class="appbar">
+    <div class="bar-inner">
+      <button class="backbtn" data-close="page-charge"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M14 6l-6 6 6 6"/></svg></button>
+      <h2>满血快充</h2>
+      <span class="badge-val" id="chgBadge"><span id="badgeText">检测中</span></span>
+    </div>
+  </header>
+  <div class="page-body">
+  <div class="hero">
+    <h1 style="font-size:var(--fs-title2)">满血快充</h1>
+    <div class="sub">把充电功率稳住在阶梯降速的每一个档位上。阶梯节奏保持原样，只压制额外降档。</div>
+  </div>
+  <div class="alert" id="chgDemo" style="display:none">
+    <b>未检测到 KernelSU 执行接口</b>
+    当前显示的是演示数据。请从 KernelSU 管理器内打开本页面查看真实状态。
+  </div>
+  <main>
+    <div class="card power-hero">
+      <div><span class="power-num" id="power">--</span><span class="power-unit">W</span></div>
+      <div class="power-side">电池 <b id="soc">--</b> · <span id="screenState">--</span></div>
+    </div>
+
+    <div class="group-title">这是什么</div>
+    <div class="card">
+      <div class="card-summary" style="padding-top:12px">
+        厂商原生的充电功率按「档位」阶梯式下降，这本是散热保护。问题在于：<b style="color:var(--on-surface)">温度、电量、场景之外的杂散因素也会触发额外降档</b>，导致每一档都跑不到该档位的满血电流。
+        本功能不改充电动画、不改充电协议、不碰电芯参数，只压制这些额外降档，让功率<b style="color:var(--on-surface)">稳住在每一个档位的满血水平</b>，阶梯本身的节奏保持原样。所有干预都留痕（changes.log），卸载模块即完全复原。
+      </div>
+    </div>
+
+    <div class="group-title">模块状态</div>
+    <div class="card">
+      <div class="row"><div class="row-main"><div class="row-title">默认温控表挂载</div></div><div class="row-value" id="sM1">--</div></div>
+      <div class="row"><div class="row-main"><div class="row-title">项目目录挂载</div></div><div class="row-value" id="sM2">--</div></div>
+      <div class="row"><div class="row-main"><div class="row-title">峰值模式文件</div></div><div class="row-value" id="sFs">--</div></div>
+      <div class="row"><div class="row-main"><div class="row-title">SELinux 标签</div></div><div class="row-value" id="sLb">--</div></div>
+      <div class="row"><div class="row-main"><div class="row-title">日志占用</div><div class="row-summary">超过 4 MB 时建议到终端清理</div></div><div class="row-value" id="sLog">--</div></div>
+    </div>
+
+    <div class="group-title">当前策略</div>
+    <div class="card">
+      <div class="row"><div class="row-main"><div class="row-title">适配项目 / 协议段</div></div><div class="row-value" id="sProj">--</div></div>
+      <div class="row"><div class="row-main"><div class="row-title">满血电流（适配器侧）</div></div><div class="row-value" id="sImax">--</div></div>
+      <div class="row"><div class="row-main"><div class="row-title">降档起点（外壳温度）</div></div><div class="row-value" id="sThr">--</div></div>
+      <div class="row"><div class="row-main"><div class="row-title">生效表大小</div></div><div class="row-value" id="sSz">--</div></div>
+    </div>
+
+    <div class="group-title">峰值保持</div>
+    <div class="group-note">在到达目标电量前，守护进程会把被杂散因素压低的功率顶回该档位满血值；到达目标后自动收手。</div>
+    <div class="card">
+      <div class="row">
+        <div class="row-icon t-green"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg></div>
+        <div class="row-main"><div class="row-title">保持峰值</div><div class="row-summary">开启后实时顶回被压低的功率</div></div>
+        <div class="switch" id="peakSw"><span class="knob"></span></div>
+      </div>
+      <div class="row">
+        <div class="row-main"><div class="row-title">目标电量</div><div class="row-summary">到达后自动收手（60–100%）</div></div>
+        <div class="stepper">
+          <button id="socMinus">−</button>
+          <span class="row-value" style="min-width:44px;text-align:center"><span id="socTarget">--</span><span class="unit">%</span></span>
+          <button id="socPlus">+</button>
+        </div>
+      </div>
+      <div class="row"><div class="row-main"><div class="row-title">守护状态</div></div><div class="row-value" id="pState">--</div></div>
+      <div class="row"><div class="row-main"><div class="row-title">累计拦截</div><div class="row-summary">每次拦截写入 changes.log，可在终端 peak.sh restore 回退</div></div><div class="row-value" id="pCount">--</div></div>
+    </div>
+
+    <div class="group-title">电池容量</div>
+    <div class="card">
+      <div class="row"><div class="row-main"><div class="row-title">设计容量</div></div><div class="row-value" id="capDesign">--</div></div>
+      <div class="row"><div class="row-main"><div class="row-title">电量计学习值</div></div><div class="row-value" id="capQmax">--</div></div>
+      <div class="row"><div class="row-main"><div class="row-title">上报满电容量</div></div><div class="row-value" id="capFcc">--</div></div>
+      <div class="row"><div class="row-main"><div class="row-title">健康度</div></div><div class="row-value" id="capSoh">--</div></div>
+      <div class="row"><div class="row-main"><div class="row-title">循环次数</div></div><div class="row-value" id="capCyc">--</div></div>
+      <div class="row"><div class="row-main"><div class="row-title">满充记录</div><div class="row-summary">写入 full.csv，用于判断是否存在提前截止</div></div><div class="row-value" id="capFull">--</div></div>
+      <div class="card-summary">电量计学习值低于设计容量时，100% 只是「充到学习值」，不是设计容量。</div>
+    </div>
+
+    <div class="group-title">实时充电</div>
+    <div class="card">
+      <div class="row"><div class="row-main"><div class="row-title">电池电流</div></div><div class="row-value" id="rCur">--</div></div>
+      <div class="row"><div class="row-main"><div class="row-title">电池电压</div></div><div class="row-value" id="rVol">--</div></div>
+      <div class="row"><div class="row-main"><div class="row-title">适配器输入</div></div><div class="row-value" id="rUsb">--</div></div>
+      <div class="row"><div class="row-main"><div class="row-title">电池温度</div></div><div class="row-value" id="rTmp">--</div></div>
+      <div class="row"><div class="row-main"><div class="row-title">快充类型</div></div><div class="row-value" id="rFast">--</div></div>
+      <div class="row"><div class="row-main"><div class="row-title">cool_down</div></div><div class="row-value" id="rCd">--</div></div>
+    </div>
+
+    <div class="group-title">HAL 健康</div>
+    <div class="card">
+      <div class="row no-divider">
+        <div class="row-main"><div class="row-title">SingleHyper 报错</div><div class="row-summary">为 0 说明充电 HAL 已成功找到峰值模式配置</div></div>
+        <div class="row-value" id="sHal">--</div>
+      </div>
+    </div>
+
+    <div class="group-title">刷新</div>
+    <div class="card">
+      <div class="row no-divider">
+        <div class="row-main"><div class="row-title">自动刷新</div><div class="row-summary">仅在本页打开时每 3 秒读取</div></div>
+        <div class="switch on" id="autoSw"><span class="knob"></span></div>
+      </div>
+      <div class="card-row-btns">
+        <button class="btn" id="btnRefresh">立即刷新</button>
+      </div>
+      <div class="card-summary">面板只读取状态，不写入任何配置。</div>
+    </div>
+
+    <div class="footnote">满血快充 · 来源 息屏快充修复 v1.3.0 · 三重 / 酷安@MieAi</div>
+  </main>
+  </div>
+</div>
+
+<!-- ================= 诊断 ================= -->
+<div class="page" id="page-log">
+  <header class="appbar">
+    <div class="bar-inner">
+      <button class="backbtn" data-close="page-log"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M14 6l-6 6 6 6"/></svg></button>
+      <h2>开机日志</h2>
+    </div>
+  </header>
+  <div class="page-body">
+    <main style="padding-top:16px">
+      <pre class="log-pre" id="logBox">正在读取…</pre>
+    </main>
+  </div>
+</div>
+
+<!-- 恢复默认参数确认 -->
+<div class="dlg" id="dlg-reset">
+  <div class="dlg-box">
+    <h3>恢复默认参数</h3>
+    <p>将灵敏度、静止门限、车辆判定参数与测试开关重置为推荐值。不会关闭晕动功能本身。</p>
+    <div class="dlg-btns">
+      <button id="dzResetCancel">取消</button>
+      <button class="primary" id="dzResetOk">恢复</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   KernelSU 桥接 —— 全局命令队列版（受控实验验证）
+   · 接口名：ksu/kernelsu/KernelSU/ksuApp/ksuBridge/KSU/未知对象枚举
+   · 调用形态：exec(cmd,"{}",cbName) 或 exec(cmd,fn)，先名后函数降级
+   · 回调形态：单对象 {exitCode,stdout,stderr} 或 (errno,stdout,stderr)
+   · 管理器执行通道为单通道：所有命令经 SH_Q 严格串行，并发必丢回调
+   ============================================================ */
+var BRIDGE=null, BRIDGE_WIN=null, CBSEQ=0;
+function findBridge(){
+  var wins=[window, window.parent, window.top];
+  var names=["ksu","kernelsu","KernelSU","ksuApp","ksuBridge","KSU"];
+  for (var w=0; w<wins.length; w++){
+    var win=wins[w];
+    if(!win) continue;
+    for (var i=0;i<names.length;i++){
+      try{ var b=win[names[i]]; if(b&&typeof b.exec==="function"){ BRIDGE_WIN=win; return b; } }catch(e){}
+    }
+    try{
+      var ks=Object.keys(win);
+      for (var j=0;j<ks.length;j++){
+        var v=null; try{ v=win[ks[j]]; }catch(e){ continue; }
+        if(v&&typeof v==="object"&&typeof v.exec==="function"){ BRIDGE_WIN=win; return v; }
+      }
+    }catch(e){}
+  }
+  return null;
+}
+function handlerFor(finish){
+  return function(a,b2,c){
+    if(a&&typeof a==="object"){
+      var code=(a.exitCode!==undefined)?a.exitCode:(a.errno!==undefined?a.errno:0);
+      finish({errno:code,stdout:a.stdout==null?"":a.stdout,stderr:a.stderr==null?"":a.stderr});
+      return;
+    }
+    finish({errno:a,stdout:b2==null?"":b2,stderr:c==null?"":c});
+  };
+}
+var SH_Q=Promise.resolve(), WORK_FORM=0;
+function shRaw(cmd){
+  return new Promise(function(resolve){
+    if(!BRIDGE) BRIDGE=findBridge();
+    if(!BRIDGE){ resolve({errno:-1,stdout:"",stderr:"NO_BRIDGE"}); return; }
+    var settled=false;
+    function finish(v){ if(!settled){ settled=true; resolve(v); } }
+    var handler=handlerFor(finish);
+    function callName(){
+      var name="__ksu_cb_"+(++CBSEQ);
+      BRIDGE_WIN[name]=function(a,b2,c){ WORK_FORM=1; handler(a,b2,c); try{delete BRIDGE_WIN[name];}catch(e){} };
+      try{ BRIDGE.exec(cmd,"{}",name); }catch(e){}
+    }
+    function callFn(){ try{ BRIDGE.exec(cmd,function(a,b2,c){ WORK_FORM=2; handler(a,b2,c); }); }catch(e){} }
+    if (WORK_FORM===1) callName();
+    else if (WORK_FORM===2) callFn();
+    else {
+      callName();
+      setTimeout(function(){
+        if(settled) return;
+        if(WORK_FORM===0) callFn();
+        setTimeout(function(){ if(!settled) finish({errno:-2,stdout:"",stderr:"TIMEOUT"}); },2200);
+      },800);
+    }
+  });
+}
+function sh(cmd){
+  var run=SH_Q.then(function(){ return shRaw(cmd); });
+  SH_Q=run.catch(function(){});
+  return run;
+}
+
+/* ================= 工具 ================= */
+var MOD="/data/adb/modules/coloros_fullpower";
+var CFG=MOD+"/config.conf";
+function $(id){ return document.getElementById(id); }
+function setv(id,txt){ var e=$(id); if(e) e.textContent=txt; }
+function kv(text){
+  var m={};
+  (text||"").split("\n").forEach(function(l){
+    l=l.trim();
+    if(!l||l.charAt(0)==="#") return;
+    var i=l.indexOf("=");
+    if(i>0) m[l.slice(0,i).trim()]=l.slice(i+1).trim();
+  });
+  return m;
+}
+function toast(msg){
+  var t=$("toast");
+  t.textContent=msg;t.classList.add("show");
+  clearTimeout(t._tm);t._tm=setTimeout(function(){t.classList.remove("show");},2200);
+}
+
+/* ================= 主页：设备与核心值 ================= */
+function loadStatus(){
+  sh("getprop ro.product.marketname; getprop ro.vendor.oplus.market.name; getprop ro.product.model; getprop ro.build.version.oplusrom; getprop ro.build.version.release; getprop persist.sys.oplus.anim_level; getprop ro.oplus.animationlevel; getprop ro.surface_flinger.supports_background_blur; getprop ro.oplus.display.disable.volume_blur; getprop persist.sys.wallpaperanimation.enable; getprop persist.oplus.flexible.blur_snapshot_enable").then(function(r){
+    var m={};
+    (r.stdout||"").split("\n").forEach(function(l,i){ m["k"+i]=l.trim(); });
+    var model=m.k0||m.k1||m.k2||"未知设备";
+    var rom=m.k3||("Android "+(m.k4||"?"));
+    var rel=m.k4||"?";
+    setv("devModel",model);
+    setv("devRom",rom.indexOf("Android")===0?rom:(rom+" · Android "+rel));
+    setv("devLine",model+" · "+rom);
+    setv("barSub",model+" · "+rom);
+    function dash(v){ return (v===""||v===undefined||v===null)?"未设置":v; }
+    function onoff(v){
+      if(v==="1"||v==="true") return "开启";
+      if(v==="0"||v==="false") return "关闭";
+      return dash(v);
+    }
+    setv("vAnim",dash(m.k5));
+    setv("vFw",dash(m.k6));
+    setv("vBlur",onoff(m.k7));
+    /* 音量条键是 disable 语义：0=不禁用(毛玻璃开启) 1=禁用(关闭) */
+    setv("vVol",m.k8==="0"?"开启":(m.k8==="1"?"关闭":dash(m.k8)));
+    setv("vWp",onoff(m.k9));
+    setv("vFlex",onoff(m.k10));
+    loadConfig();
+  });
+}
+
+/* ================= 主页：配置开关 ================= */
+function loadConfig(){
+  sh("cat "+CFG+" 2>/dev/null").then(function(r){
+    var m=kv(r.stdout);
+    var list=document.querySelectorAll("[data-sw]");
+    for (var i=0;i<list.length;i++){
+      (function(el){
+        var k=el.getAttribute("data-sw");
+        var on=(m[k]===undefined)?el.classList.contains("on"):(m[k]==="1");
+        el.classList.toggle("on",on);
+      })(list[i]);
+    }
+    twInit();
+    stInit();
+  });
+}
+function setConfig(key,val){
+  var cmd="if grep -q '^"+key+"=' "+CFG+" 2>/dev/null; "
+        +"then sed -i 's/^"+key+"=.*/"+key+"="+val+"/' "+CFG+"; "
+        +"else echo '"+key+"="+val+"' >> "+CFG+"; fi";
+  return sh(cmd).then(function(r){ return r.errno===0; });
+}
+(function bindSwitches(){
+  var list=document.querySelectorAll(".switch[data-sw]");
+  for (var i=0;i<list.length;i++){
+    (function(sw){
+      sw.addEventListener("click",function(ev){
+        ev.stopPropagation();
+        var key=sw.getAttribute("data-sw");
+        var next=!sw.classList.contains("on");
+        sw.classList.toggle("on",next);
+        setConfig(key,next?"1":"0").then(function(ok){
+          if(!ok){ sw.classList.toggle("on",!next); toast("写入失败"); return; }
+          toast(next?"已开启，重启生效":"已关闭，重启生效");
+        });
+      });
+    })(list[i]);
+  }
+  var rows=document.querySelectorAll(".row[data-key]");
+  for (var j=0;j<rows.length;j++){
+    (function(row){
+      row.addEventListener("click",function(ev){
+        if(ev.target.closest(".switch")) return;
+        var sw=row.querySelector(".switch");
+        if(sw) sw.click();
+      });
+    })(rows[j]);
+  }
+})();
+
+/* ================= 主页：温度墙 ================= */
+var TW_R=14;
+var twAutoFlag=false;
+var twMax=480;
+function twRender(v){
+  if(isNaN(v)||v<=0) return;
+  var t=v/10.0;
+  setv("twVal",t.toFixed(1));
+  var el=$("twSlider");
+  var w=el.clientWidth||1;
+  var span=Math.max(1, twMax-440);
+  var f=Math.max(0,Math.min(1,(v-440)/span));
+  var x=TW_R+f*(w-TW_R*2);
+  $("twFill").style.width=(x+TW_R)+"px";
+  $("twThumb").style.left=x+"px";
+  $("twThumb").style.transform="translate(-50%,-50%)";
+}
+function twSetEnabled(sup){
+  ["twApply","twAuto","twReset"].forEach(function(id){
+    var b=$(id); if(b) b.disabled=!sup;
+  });
+}
+function twMeta(m){
+  var proj=m.project||"?";
+  var ma=parseInt(m.max_current||0,10);
+  var secs=(m.sections||"").split(",").filter(function(x){return x;});
+  var txt=proj+" · "+(ma?ma+" mA":"--")+(secs.length?" · "+secs.length+" 段":"");
+  setv("twMeta",txt);
+}
+function twInit(tryN){
+  tryN=tryN||0;
+  var done=false;
+  sh(MOD+"/bin/tempwall.sh get").then(function(r){
+    done=true;
+    var m=kv(r.stdout);
+    var sup=m.supported==="1";
+    var enabled=m.enabled!=="0";
+    var w=parseFloat(m.wall);
+    var dw=parseFloat(m.default_wall)||480;
+    var wmax=parseFloat(m.wall_max)||480;
+    if(wmax<440) wmax=440;
+    if(wmax>580) wmax=580;
+    twMax=wmax;
+    setv("twMarkMid",Math.round((440+twMax)/20)+"℃");
+    setv("twMarkMax",(twMax/10).toFixed(1)+"℃");
+    setv("twRangeNote","范围 44–"+(twMax/10).toFixed(1)+"℃；自动值按本机表峰值电流与满流温度换算");
+    twMeta(m);
+    if(!sup){
+      setv("twNow","未检测到温控表"); setv("twVal","—"); twSetEnabled(false); return;
+    }
+    if(!enabled){
+      setv("twNow","快充叠加已关闭"); setv("twVal","—"); twSetEnabled(false); return;
+    }
+    twSetEnabled(true);
+    if(m.restored==="1" || isNaN(w) || w<=0){
+      twAutoFlag=false;
+      setv("twNow","原始表");
+      var rw=Math.max(440,Math.min(twMax,dw));
+      $("twSlider")._v=rw;
+      twRender(rw);
+      setv("twVal","—");
+      return;
+    }
+    twAutoFlag=(m.auto==="1");
+    setv("twNow",(w/10).toFixed(1)+"℃"+(twAutoFlag?" · 自动":""));
+    $("twSlider")._v=w;
+    twRender(w);
+  });
+  setTimeout(function(){
+    if(done) return;
+    if(tryN<5) setTimeout(function(){ twInit(tryN+1); },800);
+  },1500);
+}
+(function(){
+  var el=$("twSlider"), track=el.querySelector(".slider-track");
+  el._v=480;
+  function setFromClient(x){
+    var r=track.getBoundingClientRect();
+    var f=Math.max(0,Math.min(1,(x-r.left-TW_R)/(r.width-TW_R*2)));
+    var v=Math.round(440+f*Math.max(1,twMax-440));
+    el._v=v; twRender(v);
+  }
+  function onMove(e){ if(!el._drag) return; setFromClient(e.touches?e.touches[0].clientX:e.clientX); }
+  function onUp(){ el._drag=false;
+    document.removeEventListener("touchmove",onMove); document.removeEventListener("mousemove",onMove);
+    document.removeEventListener("touchend",onUp); document.removeEventListener("mouseup",onUp); }
+  function onDown(e){ el._drag=true; setFromClient(e.touches?e.touches[0].clientX:e.clientX);
+    document.addEventListener("touchmove",onMove,{passive:false});
+    document.addEventListener("mousemove",onMove);
+    document.addEventListener("touchend",onUp); document.addEventListener("mouseup",onUp); }
+  el.addEventListener("touchstart",onDown,{passive:true});
+  el.addEventListener("mousedown",onDown);
+
+  $("twApply").addEventListener("click",function(){
+    var v=Math.round(el._v);
+    $("twApply").disabled=true;
+    sh(MOD+"/bin/tempwall.sh set "+v).then(function(r){
+      $("twApply").disabled=false;
+      if(r.errno!==0){ toast("应用失败："+((r.stderr||"").trim()||"执行失败")); return; }
+      var out=(r.stdout||"").trim();
+      var m=kv(out);
+      if(m.err){ toast("应用失败："+(m.err||"未知错误")); return; }
+      var w=parseFloat(m.wall);
+      if(!isNaN(w)){
+        twAutoFlag=false;
+        setv("twNow",(w/10).toFixed(1)+"℃");
+        twRender(w);
+        toast("已应用，无需重启");
+        twInit();
+      } else {
+        toast("应用结果未知："+out);
+      }
+    });
+  });
+
+  $("twAuto").addEventListener("click",function(){
+    sh(MOD+"/bin/tempwall.sh auto").then(function(r){
+      if(r.errno!==0){ toast("自动适配失败："+((r.stderr||"").trim()||"执行失败")); return; }
+      var m=kv(r.stdout||"");
+      if(m.err){ toast("自动适配失败："+(m.err||"未知错误")); return; }
+      var w=parseFloat(m.wall);
+      toast("已切回自动"+(isNaN(w)?"":"："+(w/10).toFixed(1)+"℃"));
+      twInit();
+    });
+  });
+
+  $("twReset").addEventListener("click",function(){
+    sh(MOD+"/bin/tempwall.sh restore").then(function(r){
+      if(r.errno!==0){ toast("恢复失败："+((r.stderr||"").trim()||"执行失败")); return; }
+      var out=(r.stdout||"").trim();
+      if(out.indexOf("restored=1")===0){
+        toast("已恢复首次读到的原始表；彻底回原厂请关闭快充叠加并重启");
+        twInit();
+      } else {
+        toast("恢复失败："+out);
+      }
+    });
+  });
+})();
+
+/* ================= 主页：系统级温控 ================= */
+function stRender(m){
+  var sw=$("stSwitch");
+  var st=m["systhermal"]||"off";
+  if(sw) sw.classList.toggle("on",st==="on"||st==="partial");
+  setv("stHorae",m["horae"]||"—");
+  var mine=parseInt(m["mine"]||0,10);
+  var total=parseInt(m["targets"]||0,10);
+  var layers=parseInt(m["layers"]||0,10);
+  setv("stMounts","覆盖 "+mine+" / "+total+" 项 · 实际层 "+layers+(st==="partial"?"（部分）":""));
+}
+function stInit(tryN){
+  tryN=tryN||0;
+  var done=false;
+  sh(MOD+"/bin/tempctl.sh status").then(function(r){
+    done=true;
+    stRender(kv(r.stdout));
+  });
+  setTimeout(function(){
+    if(done) return;
+    if(tryN<5) setTimeout(function(){ stInit(tryN+1); },800);
+  },1500);
+}
+(function(){
+  var sw=$("stSwitch");
+  sw.addEventListener("click",function(){
+    var next=!sw.classList.contains("on");
+    sw.classList.toggle("on",next);
+    var key="ENABLE_SYSTHERMAL";
+    setConfig(key,next?"1":"0").then(function(ok){
+      if(!ok){ sw.classList.toggle("on",!next); toast("写入配置失败"); return; }
+      return sh(MOD+"/bin/tempctl.sh "+(next?"on":"off")).then(function(r){
+        var out=(r.stdout||"").trim();
+        var good=next?(out.indexOf("applied=")===0)
+                    :(out.indexOf("restored=")===0);
+        if(!good){
+          sw.classList.toggle("on",!next);
+          setConfig(key,next?"0":"1");
+          toast(next?"开启失败："+out:"恢复失败："+out);
+          stInit();
+          return;
+        }
+        toast(next?"系统温控已禁用（即时生效，重启后保持）":"已恢复原厂策略（重启后保持关闭）");
+        stInit();
+      });
+    }).catch(function(e){
+      sw.classList.toggle("on",!next);
+      toast("操作失败："+(e.message||e));
+    });
+  });
+})();
+
+/* ================= 页面层（懒加载初始化） ================= */
+var pageInit={dizzy:false,charge:false};
+function openPage(id){
+  $(id).classList.add("open");
+  if(id==="page-dizzy" && !pageInit.dizzy){ pageInit.dizzy=true; dizzyInit(); }
+  if(id==="page-charge" && !pageInit.charge){ pageInit.charge=true; chargeInit(); }
+}
+function closePage(id){
+  $(id).classList.remove("open");
+  if(id==="page-charge" && chgTimer){ clearInterval(chgTimer); chgTimer=null; }
+}
+$("btnDizzy").addEventListener("click",function(){ openPage("page-dizzy"); });
+$("btnCharge").addEventListener("click",function(){ openPage("page-charge"); });
+$("entryDizzy").addEventListener("click",function(ev){
+  if(ev.target.closest(".switch")) return;
+  openPage("page-dizzy");
+});
+$("entryCharge").addEventListener("click",function(){ openPage("page-charge"); });
+$("entryLog").addEventListener("click",function(){
+  $("logBox").textContent="正在读取…";
+  $("page-log").classList.add("open");
+  sh("cat "+MOD+"/last_boot.log 2>/dev/null | tail -60").then(function(r){
+    $("logBox").textContent=(r.stdout||"").trim()||"(空)";
+  });
+});
+var closers=document.querySelectorAll("[data-close]");
+for (var c=0;c<closers.length;c++){
+  closers[c].addEventListener("click",function(){ closePage(this.getAttribute("data-close")); });
+}
+
+/* ================= 顶栏折叠 ================= */
+(function(){
+  var bar=$("appbar");
+  function upd(){
+    var el=document.scrollingElement||document.documentElement;
+    var st=(el&&el.scrollTop)||window.scrollY||0;
+    bar.classList.toggle("scrolled",st>24);
+  }
+  window.addEventListener("scroll",upd,{passive:true});
+  document.addEventListener("scroll",upd,{passive:true,capture:true});
+  setTimeout(upd,200);
+})();
+
+/* ================= 无桥接提示 ================= */
+setTimeout(function(){
+  sh("true").then(function(r){
+    if(r.errno===-1&&r.stderr==="NO_BRIDGE"){
+      var names=[];
+      try{ names=Object.keys(window).filter(function(k){
+        try{ var v=window[k]; return v&&typeof v==="object"&&typeof v.exec==="function"; }catch(e){ return false; }
+      }); }catch(e){}
+      $("bridgeHint").textContent=names.length?("window 上的候选对象："+names.slice(0,8).join("、")):"";
+      $("noBridge").style.display="block";
+    }
+  });
+},600);
+
+/* ============================================================
+   晕动舒缓显示（懒加载：首次打开页面时初始化）
+   ============================================================ */
+function getSetting(key){
+  return sh("settings get secure "+key).then(function(r){ return (r.stdout||"").trim(); })
+    .catch(function(){ return null; });
+}
+function putSetting(key,val){
+  return sh("settings put secure "+key+" "+val).then(function(r){
+    if(r && r.errno!==0) throw new Error((r.stderr||"settings put failed").trim());
+    return true;
+  });
+}
+
+var dzLastRaw="";
+function dzRefreshState(manual){
+  sh("su -c 'grep -h \"state:\" /data/adb/lspd/log/modules_*.log 2>/dev/null | tail -1'").then(function(r){
+    var line=(r.stdout||"").trim();
+    if(!line){ setv("dzStatus","暂无运行日志"); if(manual)toast("暂无运行日志"); return; }
+    var m=line.replace(/^.*AntiDizzyBridge:\s*/,"");
+    if(m!==dzLastRaw||manual){ dzLastRaw=m; setv("dzStatus",m); }
+    var veh=/veh=true/.test(m);
+    var modeM=m.match(/mode=(\d)/);
+    var mode=modeM?modeM[1]:"?";
+    setv("vehState",mode==="2"?"常驻模式（不判定）":(veh?"在车上":"未检测到车辆"));
+    $("dotVeh").className="dot "+(veh&&mode!=="2"?"on":"");
+    setv("modeState",mode==="2"?"常驻显示":mode==="1"?"仅车辆运动":mode);
+    dzSyncRadios("m",mode==="1"?"1":mode==="2"?"2":null);
+  }).catch(function(e){ setv("dzStatus","读取失败: "+e.message); });
+}
+function dzLoadEnable(){
+  getSetting("oplus_customize_antidizzy_enable").then(function(v){
+    $("swEnable").classList.toggle("on",v==="1");
+  });
+}
+function dzToggleEnable(){
+  var sw=$("swEnable");
+  var on=!sw.classList.contains("on");
+  sw.classList.toggle("on",on);
+  sh("cat "+CFG+" 2>/dev/null").then(function(r){
+    var gate=kv(r.stdout||"")["ENABLE_ANTIDIZZY"];
+    if(on && gate!==undefined && gate!=="1"){
+      sw.classList.toggle("on",false);
+      toast("请先在主页打开「晕动舒缓显示」并重启");
+      return null;
+    }
+    return putSetting("oplus_customize_antidizzy_enable",on?1:0).then(function(){
+      toast(on?"晕动舒缓显示已开启":"晕动舒缓显示已关闭");
+      dzRefreshState();
+    });
+  }).catch(function(e){
+    sw.classList.toggle("on",!on);
+    toast("保存失败："+(e.message||e));
+  });
+}
+var THUMB_R=14;
+function makeSlider(id,opts){
+  var el=$(id);
+  var fill=el.querySelector(".slider-fill");
+  var thumb=el.querySelector(".slider-thumb");
+  var cur=opts.def;
+  function render(v){
+    cur=v;
+    var w=el.clientWidth||1;
+    var f=Math.max(0,Math.min(1,(v-opts.min)/(opts.max-opts.min)));
+    var x=THUMB_R+f*(w-THUMB_R*2);
+    fill.style.width=(x+THUMB_R)+"px";
+    thumb.style.left=x+"px";
+    if(opts.label) setv(opts.label,opts.fmt(v));
+  }
+  function setFromEvent(e){
+    var rect=el.getBoundingClientRect();
+    var x=Math.max(0,Math.min(rect.width,e.clientX-rect.left));
+    var f=Math.max(0,Math.min(1,(x-THUMB_R)/(rect.width-THUMB_R*2)));
+    render(opts.min+f*(opts.max-opts.min));
+  }
+  el.addEventListener("pointerdown",function(e){ el.setPointerCapture(e.pointerId); el.classList.add("active"); setFromEvent(e); });
+  el.addEventListener("pointermove",function(e){ if(el.classList.contains("active")) setFromEvent(e); });
+  el.addEventListener("pointerup",function(e){
+    if(!el.classList.contains("active")) return;
+    el.classList.remove("active"); setFromEvent(e);
+    opts.commit(cur).then(function(){ toast(opts.doneMsg(cur)); })
+      .catch(function(err){ toast("保存失败："+err.message); });
+  });
+  el.addEventListener("pointercancel",function(){
+    /* 滚动抢走手势：只结束拖动，位置不跳变 */
+    el.classList.remove("active");
+  });
+  window.addEventListener("resize",function(){ render(cur); });
+  return { render:render, get:function(){ return cur; } };
+}
+var gainS,gainyS,gateS;
+function dzLoadGain(){
+  return getSetting("motion_cues_gain").then(function(v){
+    gainS.render(v&&parseFloat(v)>0?parseFloat(v):1.0);
+    return getSetting("motion_cues_gain_y");
+  }).then(function(vy){
+    gainyS.render(vy&&parseFloat(vy)>0?parseFloat(vy):2.5);
+    return getSetting("motion_cues_gate");
+  }).then(function(vg){
+    gateS.render((vg!==null&&vg!==""&&!isNaN(parseFloat(vg)))?Math.max(0,parseFloat(vg)):0.08);
+  });
+}
+function dzSetMode(m){
+  dzSyncRadios("m",String(m));
+  putSetting("oplus_customize_antidizzy_mode",m).then(function(){
+    toast(m===2?"已切换：常驻显示":"已切换：仅车辆运动");
+    dzRefreshState();
+  }).catch(function(e){ toast("切换失败："+(e.message||e)); dzRefreshState(); });
+}
+function dzSetTest(v){
+  dzSyncRadios("t",String(v));
+  putSetting("motion_cues_bridge_test",v).then(function(){
+    toast(v===0?"测试已关闭":"测试模式 "+v+" 已开启");
+  }).catch(function(e){ toast("测试模式设置失败："+(e.message||e)); dzLoadTest(); });
+}
+function dzSyncRadios(prefix,val){
+  var ids=prefix==="m"?["m1","m2"]:["t0","t1","t2","t3","t4","t5"];
+  ids.forEach(function(id){
+    var el=$(id);
+    if(el) el.classList.toggle("on",id===prefix+val);
+  });
+}
+function dzLoadTest(){
+  return getSetting("motion_cues_bridge_test").then(function(v){
+    dzSyncRadios("t",["0","1","2","3","4","5"].indexOf(v)>=0?v:"0");
+  });
+}
+var VEH_KEYS=["motion_cues_veh_rms","motion_cues_veh_low","motion_cues_veh_rot","motion_cues_veh_step","motion_cues_veh_hold"];
+function dzLoadVeh(){
+  var defs={motion_cues_veh_rms:0.12,motion_cues_veh_low:0.55,motion_cues_veh_rot:0.12,motion_cues_veh_step:0.45,motion_cues_veh_hold:8};
+  VEH_KEYS.forEach(function(k){
+    getSetting(k).then(function(v){
+      var el=$(k.replace("motion_cues_",""));
+      if(el) el.value=(v&&parseFloat(v)>0)?parseFloat(v):defs[k];
+    });
+  });
+}
+function dzSaveVeh(){
+  var chain=Promise.resolve();
+  VEH_KEYS.forEach(function(k){
+    chain=chain.then(function(){
+      var el=$(k.replace("motion_cues_",""));
+      var v=parseFloat(el.value);
+      if(!isNaN(v)&&v>0) return putSetting(k,v);
+    });
+  });
+  chain.then(function(){ toast("车辆参数已保存，约 2 秒生效"); })
+    .catch(function(e){ toast("保存失败："+(e.message||e)); });
+}
+var DZ_DEFAULTS={motion_cues_gain:1.0,motion_cues_gain_y:2.5,motion_cues_gate:0.08,
+  motion_cues_veh_rms:0.12,motion_cues_veh_low:0.55,motion_cues_veh_rot:0.12,
+  motion_cues_veh_step:0.45,motion_cues_veh_hold:8,motion_cues_bridge_test:0};
+function dzOpenReset(){ $("dlg-reset").classList.add("show"); }
+function dzCloseReset(){ $("dlg-reset").classList.remove("show"); }
+function dzDoReset(){
+  dzCloseReset();
+  var chain=Promise.resolve();
+  for(var k in DZ_DEFAULTS){ (function(key,val){ chain=chain.then(function(){ return putSetting(key,val); }); })(k,DZ_DEFAULTS[k]); }
+  chain.then(function(){ return Promise.all([dzLoadGain(),dzLoadVeh(),dzLoadTest()]); })
+    .then(function(){ dzRefreshState(); toast("已恢复默认参数"); })
+    .catch(function(e){ toast("恢复失败："+e.message); });
+}
+function dzBind(){
+  $("swEnable").addEventListener("click",dzToggleEnable);
+  $("m1").addEventListener("click",function(){ dzSetMode(1); });
+  $("m2").addEventListener("click",function(){ dzSetMode(2); });
+  $("t0").addEventListener("click",function(){ dzSetTest(0); });
+  $("t1").addEventListener("click",function(){ dzSetTest(1); });
+  $("t2").addEventListener("click",function(){ dzSetTest(2); });
+  $("t3").addEventListener("click",function(){ dzSetTest(3); });
+  $("t4").addEventListener("click",function(){ dzSetTest(4); });
+  $("t5").addEventListener("click",function(){ dzSetTest(5); });
+  $("vehSave").addEventListener("click",dzSaveVeh);
+  $("btnReset").addEventListener("click",dzOpenReset);
+  $("dzResetCancel").addEventListener("click",dzCloseReset);
+  $("dzResetOk").addEventListener("click",dzDoReset);
+  gainS=makeSlider("gainSlider",{min:0.2,max:10,def:1.0,label:"gainV",
+    fmt:function(v){return v.toFixed(1)+"×";},commit:function(v){return putSetting("motion_cues_gain",v.toFixed(1));},
+    doneMsg:function(v){return "摆动幅度已保存："+v.toFixed(1)+"×";}});
+  gainyS=makeSlider("gainySlider",{min:0.5,max:10,def:2.5,label:"gainyV",
+    fmt:function(v){return v.toFixed(1)+"×";},commit:function(v){return putSetting("motion_cues_gain_y",v.toFixed(1));},
+    doneMsg:function(v){return "前后向增强已保存："+v.toFixed(1)+"×";}});
+  gateS=makeSlider("gateSlider",{min:0,max:0.3,def:0.08,label:"gateV",
+    fmt:function(v){return v<=0.004?"关闭":v.toFixed(2);},commit:function(v){return putSetting("motion_cues_gate",v<=0.004?"0":v.toFixed(2));},
+    doneMsg:function(v){return v<=0.004?"静止门限已关闭":"静止门限已保存："+v.toFixed(2);}});
+}
+var dzTimer=null;
+function dizzyInit(){
+  dzBind();
+  dzLoadGain(); dzLoadVeh(); dzLoadEnable(); dzLoadTest();
+  dzRefreshState();
+  if(!dzTimer) dzTimer=setInterval(function(){
+    if($("page-dizzy").classList.contains("open")) dzRefreshState();
+  },3000);
+}
+
+/* ============================================================
+   满血快充（懒加载：首次打开页面时初始化）
+   ============================================================ */
+var CH_DIRS=["/data/adb/modules/coloros_fullpower","/data/adb/modules_update/coloros_fullpower"];
+var chDirIdx=0, chgTimer=null, chBusy=false, pBusy=false;
+function chParseKV(text){
+  var o={};
+  if(!text) return o;
+  text.split(/\r?\n/).forEach(function(line){
+    var i=line.indexOf("=");
+    if(i>0) o[line.slice(0,i).trim()]=line.slice(i+1).trim();
+  });
+  return o;
+}
+function chSetRow(id,text,cls){
+  var el=$(id);
+  el.textContent=text;
+  el.className="row-value"+(cls?" "+cls:"");
+}
+function chNum(v,fallback){
+  var n=parseFloat(v);
+  return isNaN(n)?fallback:n;
+}
+function chRender(d){
+  var sup=parseInt(d.supported||0,10)===1;
+  var hasDir=parseInt(d.has_dir||0,10)===1;
+  var okMount=parseInt(d.m_default||0,10)>=1 && (!hasDir || parseInt(d.m_dir||0,10)>=1);
+  var okFile=!hasDir || d.f_silicon==="1";
+  var okLabel=parseInt(d.label||0,10)>=1;
+  var okHal=parseInt(d.hal_err||0,10)===0;
+  var allOk=sup&&okMount&&okFile&&okLabel;
+
+  $("chgBadge").className="badge-val "+(allOk?"ok":"bad");
+  $("badgeText").textContent=!sup?"未识别":(allOk?"已生效":"部分生效");
+
+  chSetRow("sM1",!sup?"未识别":(parseInt(d.m_default||0,10)>=1?"已挂载":"未挂载"),(!sup?"":(parseInt(d.m_default||0,10)>=1?"ok":"bad")));
+  chSetRow("sM2",!sup?"未识别":(!hasDir?"无需":(parseInt(d.m_dir||0,10)>=1?"已挂载":"未挂载")),(!sup?"":(!hasDir?"":(parseInt(d.m_dir||0,10)>=1?"ok":"bad"))));
+  chSetRow("sFs",!sup?"未识别":(!hasDir?"无需":(okFile?"已补齐":"缺失")),(!sup?"":(!hasDir?"":(okFile?"ok":"bad"))));
+  chSetRow("sLb",!sup?"—":(!hasDir?"无需":(d.label||"0")+"/"+(d.label_total||"?")+" 正确"),(!sup?"":(!hasDir?"":(okLabel?"ok":"bad"))));
+  var tb=parseInt(d.total_bytes||0,10);
+  chSetRow("sLog",tb?tb+" KB":"--",tb>4096?"bad":"");
+
+  setv("capDesign",d.cap_design?d.cap_design+" mAh":"--");
+  setv("capQmax",d.cap_qmax?d.cap_qmax+" mAh":"--");
+  var fccv=chNum(d.cap_fcc,0),qmv=chNum(d.cap_qmax,0);
+  chSetRow("capFcc",fccv?fccv+" mAh":"--",(qmv&&fccv&&fccv<qmv)?"warn":"");
+  setv("capSoh",d.cap_soh?d.cap_soh+" %":"--");
+  setv("capCyc",d.cap_cycles?d.cap_cycles+" 次":"--");
+  setv("capFull",(d.cap_full_log||"0")+" 次");
+
+  var proj=d.project||"?";
+  var secs=(d.sections||"").split(",").filter(function(x){return x;});
+  chSetRow("sProj",proj+" · "+(secs.length?secs.length+" 段":"--"),sup?"":"bad");
+  setv("sImax",chNum(d.imax,0)?d.imax+" mA":"--");
+  setv("sThr",chNum(d.thr,0)?(chNum(d.thr,0)/10).toFixed(1)+" ℃":"--");
+  setv("sSz",d.sz_silicon?d.sz_silicon+" B":"--");
+
+  var ma0=chNum(d.batt_ma,0),mv=chNum(d.batt_mv,0);
+  var ma=Math.abs(ma0);
+  var p=ma*mv/1e6;
+  var st=(d.bstatus||"").trim();
+  var dir=st==="Charging"?"充入":(st==="Discharging"?"放出":(st==="Full"?"已充满":st||""));
+  $("power").textContent=p>0.05?p.toFixed(1):"--";
+  chSetRow("rCur",ma?(ma/1000).toFixed(2)+" A"+(dir?"（"+dir+"）":""):"--");
+  chSetRow("rVol",mv?(mv/1000).toFixed(2)+" V":"--");
+
+  var usbua=chNum(d.usb_ua,0),usbuv=chNum(d.usb_uv,0);
+  var wIn=usbua*usbuv/1e12;
+  chSetRow("rUsb",usbua>0?(usbua/1000).toFixed(0)+" mA · "+(usbuv/1e6).toFixed(2)+" V · "+wIn.toFixed(1)+" W":"--");
+
+  var t=chNum(d.batt_temp,0);
+  chSetRow("rTmp",t?(t/10).toFixed(1)+" ℃":"--");
+  chSetRow("rFast",d.fast_type!==undefined?d.fast_type:"--");
+  chSetRow("rCd",d.cool_down!==undefined?d.cool_down:"--");
+  chSetRow("sHal",okHal?"0 次":(d.hal_err+" 次"),okHal?"ok":"bad");
+
+  var pen=d.enabled==="1"||d.enabled===1;
+  var pEl=$("peakSw");
+  if(!pBusy) pEl.className="switch"+(pen?" on":"");
+  $("socTarget").textContent=d.target||"--";
+  var pst=(d.state||"").trim();
+  var pstText=pst.indexOf("guarding")===0?"守护中":
+              pst.indexOf("released")===0?"已到目标，收手中":
+              pst.indexOf("disabled")===0?"已关闭":
+              pst.indexOf("idle")===0?"待机（未接电源）":(pst||"--");
+  chSetRow("pState",pstText,pst.indexOf("guarding")===0?"ok":"");
+  var cc=parseInt(d.clear_count||0,10);
+  chSetRow("pCount",cc+" 次",cc>0?"ok":"");
+  $("soc").textContent=d.soc?d.soc+"%":"--";
+  var sc=(d.screen||"").trim();
+  $("screenState").textContent=(sc==="Awake"||sc==="Dreaming")?"屏幕点亮":(sc==="Dozing"?"息屏（AOD）":(sc?"屏幕熄灭":"--"));
+}
+function chDemoData(){
+  return {supported:"0",project:"?",sections:"",active_section:"",
+    has_default:"0",has_dir:"0",m_default:"0",m_dir:"0",f_silicon:"0",label:"0",label_total:"0",sz_silicon:"0",imax:"0",thr:"0",
+    batt_ma:"0",batt_mv:"0",batt_temp:"0",soc:"0",usb_ua:"0",usb_uv:"0",
+    fast_type:"--",bstatus:"",enabled:"0",target:"90",state:"idle",
+    clear_count:"0",total_bytes:"0",cap_design:"0",cap_qmax:"0",cap_fcc:"0",
+    cap_soh:"0",cap_cycles:"0",cap_full_log:"0",cool_down:"0",screen:"",hal_err:"0"};
+}
+function chRefresh(){
+  if(chBusy) return;
+  chBusy=true;
+  var btn=$("btnRefresh");
+  if(btn) btn.disabled=true;
+  sh("sh "+CH_DIRS[chDirIdx]+"/webroot/status.sh").then(function(r){
+    var out=(r && r.stdout!==undefined)?r.stdout:null;
+    if(out===null){
+      chRender(chDemoData());
+      $("chgDemo").style.display="block";
+      return;
+    }
+    if(!out||out.indexOf("=")<0){
+      if(chDirIdx<CH_DIRS.length-1){
+        chDirIdx++;
+        return sh("sh "+CH_DIRS[chDirIdx]+"/webroot/status.sh").then(function(r2){
+          var out2=(r2&&r2.stdout!==undefined)?r2.stdout:"";
+          chRender(chParseKV(out2));
+        });
+      }
+    }
+    chRender(chParseKV(out));
+  }).finally(function(){
+    chBusy=false;
+    if(btn) btn.disabled=false;
+  });
+}
+function chPeakCmd(arg){ return sh("sh "+CH_DIRS[chDirIdx]+"/bin/peak.sh "+arg); }
+function chBind(){
+  $("peakSw").addEventListener("click",function(){
+    if(pBusy) return;
+    pBusy=true;
+    var on=!this.classList.contains("on");
+    this.className="switch"+(on?" on":"");
+    chPeakCmd("set ENABLED "+(on?"1":"0")).then(function(r){
+      if(r.errno!==0) toast("峰值开关保存失败");
+    }).finally(function(){ pBusy=false; chRefresh(); });
+  });
+  $("socPlus").addEventListener("click",function(){
+    var v=parseInt($("socTarget").textContent,10)||90;
+    v=Math.min(100,v+5);
+    $("socTarget").textContent=v;
+    chPeakCmd("set TARGET_SOC "+v).then(function(r){
+      if(r.errno!==0) toast("目标电量保存失败");
+      chRefresh();
+    });
+  });
+  $("socMinus").addEventListener("click",function(){
+    var v=parseInt($("socTarget").textContent,10)||90;
+    v=Math.max(60,v-5);
+    $("socTarget").textContent=v;
+    chPeakCmd("set TARGET_SOC "+v).then(function(r){
+      if(r.errno!==0) toast("目标电量保存失败");
+      chRefresh();
+    });
+  });
+  $("autoSw").addEventListener("click",function(){
+    var on=!this.classList.contains("on");
+    this.classList.toggle("on",on);
+    if(chgTimer){ clearInterval(chgTimer); chgTimer=null; }
+    if(on) chgTimer=setInterval(function(){ if($("page-charge").classList.contains("open")) chRefresh(); },3000);
+  });
+  $("btnRefresh").addEventListener("click",chRefresh);
+}
+function chargeInit(){
+  chBind();
+  chRefresh();
+}
+
+/* ================= 启动 ================= */
+loadStatus();
+</script>
+</body>
+</html>
+

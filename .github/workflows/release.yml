@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate module metadata
+        run: |
+          set -e
+          grep -q '^id=coloros_fullpower$' src/module.prop
+          grep -q '^version=6\.0$' src/module.prop
+          grep -q '^versioncode=600$' src/module.prop
+          test -f src/customize.sh
+          test -f src/post-fs-data.sh
+          test -f src/service.sh
+          test -f src/bin/tempwall.sh
+          test -f src/bin/peak.sh
+          test -f src/webroot/index.html
+          test -f src/files/AntiDizzyBridge.apk
+          python tools/validate_webui.py
+
+      - name: Build module zip
+        run: |
+          set -e
+          cd src
+          ZIP="$GITHUB_WORKSPACE/ColorOS_fullpower_${GITHUB_REF_NAME}.zip"
+          zip -r "$ZIP" . -x '_reference/*' '*.zip'
+          unzip -l "$ZIP" | tee "$GITHUB_WORKSPACE/zip-list.txt"
+          test "$(unzip -Z1 "$ZIP" | grep -c '^module.prop$')" -eq 1
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ColorOS_fullpower_${{ github.ref_name }}
+          path: ColorOS_fullpower_*.zip
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ColorOS_fullpower_*.zip
+          generate_release_notes: true
+          fail_on_unmatched_files: true

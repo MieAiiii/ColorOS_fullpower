@@ -1,0 +1,43 @@
+# ============================================================
+#  ColorOS 满血特性 6.0
+#  作者：三重 / 酷安@MieAi
+#
+#  核心层：动画与模糊。这些键在所有 ColorOS 12+ 上都存在或被框架
+#  优雅忽略，且没有「写了但硬件撑不住就崩」的风险，所以常驻写入，
+#  不设开关。WebUI 里以「常驻」标识展示实际值，不伪装成可关闭。
+#
+#  由 KernelSU 的 ksud 在 post-fs-data 阶段以 resetprop 语义写入 ——
+#  可覆盖系统已存在的 ro.*，这是脚本里的 setprop 做不到的。
+#
+#  可选层（相机/音频/录屏/旧版键/晕动舒缓）由 post-fs-data.sh
+#  按 config.conf 决定，见 WebUI。
+#
+#  ⚠ 语法：必须 KEY=VALUE，等号两边不能有空格。
+# ============================================================
+
+
+# ==================== 动画 ====================
+
+# 全局动画档位。Settings / SystemUI / Launcher / Camera / Gallery / UXDesign
+# 六处都在读，是 ColorOS 真正的动画总闸。四档，1 为最强。
+persist.sys.oplus.anim_level=1
+
+# OPPO 框架层（oplus-framework.jar / oplus-services.jar）私有档位。
+# 三档，3 为最强。
+ro.oplus.animationlevel=3
+
+# 壁纸动画（Launcher 读取）
+persist.sys.wallpaperanimation.enable=true
+
+
+# ==================== 模糊 ====================
+
+# SurfaceFlinger 背景模糊能力。surfaceflinger 二进制直接读，缺失即视为「不支持」。
+# 必须在 SurfaceFlinger 启动前写好，所以只能放这里。
+ro.surface_flinger.supports_background_blur=1
+
+# 音量条模糊。0 = 不禁用。由 SystemUI 读取。
+ro.oplus.display.disable.volume_blur=0
+
+# 小窗 / 分屏模糊快照。由 SystemUI 读取。
+persist.oplus.flexible.blur_snapshot_enable=true

@@ -1,0 +1,10 @@
+# 本地构建产物：不要提交
+/ColorOS_fullpower_v*.zip
+*.zip
+build/
+dist/
+.gradle/
+.idea/
+.DS_Store
+__pycache__/
+*.pyc
