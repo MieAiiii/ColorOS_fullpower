@@ -20,8 +20,9 @@ jobs:
         run: |
           set -e
           grep -q '^id=coloros_fullpower$' src/module.prop
+          grep -q '^versionCode=' src/module.prop
           VERSION="$(sed -n 's/^version=//p' src/module.prop)"
-          VERSIONCODE="$(sed -n 's/^versioncode=//p' src/module.prop)"
+          VERSIONCODE="$(sed -n 's/^versionCode=//p' src/module.prop)"
           test -n "$VERSION"
           test "$VERSIONCODE" -ge 600
           test -f src/customize.sh

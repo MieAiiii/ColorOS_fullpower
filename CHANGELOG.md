@@ -1,5 +1,11 @@
 # 更新日志
 
+## v10.1.1（2026-11-22）
+
+- 修正 `module.prop` 的 `versionCode` 键名：`versioncode` → `versionCode`，解决 KernelSU 门户同步检查 `prop-missing-field`
+- 版本提升到 `10.1.1 / 1002`；功能与 10.1 完全相同
+- CI 增加 `^versionCode=` 元数据检查，避免再次发出版本键名不合规的包
+
 ## v10.1（2026-11-22）
 
 - 新增 `webroot/adapt.sh`：运行时探测 ColorOS 主版本、Settings 键是否存在、PQ 属性是否存在、晕动桥接是否安装

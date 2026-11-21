@@ -1,7 +1,7 @@
 id=coloros_fullpower
 name=ColorOS特性补全
-version=10.1
-versioncode=1001
+version=10.1.1
+versionCode=1002
 author=三重 / 酷安@MieAi
-description=ColorOS特性补全 10.1：在 10.0 基础上加入机型能力探测与适配策略（自动/兼容/全量），按 ColorOS 16/17 实际支持的 Settings/PQ 键应用，未支持项不创建假键，WebUI 动态显示/禁用；晕动控制仍为二级页。所有功能默认不主动改写，按需手动开启。需要 KernelSU；晕动桥接另需 LSPosed（作用域：系统框架）。
+description=ColorOS特性补全 10.1.1：修正 module.prop 的 versionCode 键名，恢复 KernelSU 门户同步校验；保留 10.1 的机型能力探测与自动/兼容/全量适配策略。所有功能默认不主动改写，按需手动开启。需要 KernelSU；晕动桥接另需 LSPosed（作用域：系统框架）。
 
