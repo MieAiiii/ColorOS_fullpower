@@ -1,13 +1,14 @@
 #!/system/bin/sh
 # ============================================================
-#  清理逻辑（晕动舒缓显示子功能）
+#  晕动舒缓显示 —— 清理脚本
 #  来源：oplus-antidizzy-module v7.5 cleanup.sh
-#  唯一改动：MODDIR 指向合并后的模块路径。
+#  唯一改动：MODDIR 指向本模块路径；移除充电/温控相关注释与数据。
 #
-#  两种调用方式：
+#  三种调用方式：
 #   1) 模块内 uninstall.sh 调用（--force）：用户删除模块时立即清理
-#   2) 作为「墓碑」被开机执行（/data/adb/service.d/motion_cues_cleanup.sh）：
-#      模块还在 → 什么都不做；模块已删 → 清理，成功后自删
+#   2) service.sh 关闭晕动时调用（--motion）：只撤晕动，保留属性备份
+#   3) 作为「墓碑」被开机执行（/data/adb/service.d/motion_cues_cleanup.sh）：
+#      模块还在 → 什么都不做；模块已删 → 恢复属性并清理，成功后自删
 #
 #  存在的意义：KernelSU 删模块只会删 /data/adb/modules/coloros_fullpower，
 #  不会管 APK、Settings、临时文件，更不会停 LSPosed 注入。
@@ -19,7 +20,11 @@ OLD=com.workbuddy.motioncues
 MODDIR=${MODDIR:-/data/adb/modules/coloros_fullpower}
 
 FORCE=0
-[ "$1" = "--force" ] && FORCE=1
+MOTION=0
+case "$1" in
+  --force)  FORCE=1 ;;
+  --motion) FORCE=1; MOTION=1 ;;
+esac
 
 if [ "$FORCE" = "0" ]; then
   # 模块仍然存在 → 说明只是普通开机，不是卸载，直接退出
@@ -32,17 +37,84 @@ if [ "$FORCE" = "0" ]; then
   done
   sleep 5
 else
-  # 立即卸载时把墓碑也带走，避免卸载后还要等下一次开机自删。
-  rm -f /data/adb/service.d/motion_cues_cleanup.sh 2>/dev/null
+  # 卸载时把墓碑也带走；仅关闭晕动时保留墓碑，动画属性仍需它兜底。
+  [ "$MOTION" = "0" ] && rm -f /data/adb/service.d/motion_cues_cleanup.sh 2>/dev/null
 fi
 
-# ---- 0. 停掉峰值守护，避免它继续写即将删除的日志 ----
-PIDF=/data/adb/screenoff_fix/daemon.pid
-if [ -f "$PIDF" ]; then
-  p=$(cat "$PIDF" 2>/dev/null)
-  cmd=$(tr '\0' ' ' < "/proc/$p/cmdline" 2>/dev/null)
-  case "$cmd" in *peak.sh*daemon*) kill "$p" 2>/dev/null ;; esac
-  rm -f "$PIDF" 2>/dev/null
+# 模块目录被 KSU 直接删掉时，模块内的 backup 也会一起消失。
+# 因此 persist/ro 原始值与 Settings 原始值另存一份在 /data/adb/coloros_fullpower/backup；
+# 墓碑（FORCE=0）与卸载（--force）先恢复，再清运行数据。
+PROP_BAK=/data/adb/coloros_fullpower/backup/original_backup.txt
+RO_BAK=/data/adb/coloros_fullpower/backup/ro_backup.txt
+SET_BAK=/data/adb/coloros_fullpower/backup/settings_backup.txt
+
+del_prop() {
+  key=$1
+  if command -v resetprop >/dev/null 2>&1; then
+    resetprop --delete "$key" >/dev/null 2>&1 || setprop "$key" "" 2>/dev/null
+  else
+    setprop "$key" "" 2>/dev/null
+  fi
+}
+
+restore_props() {
+  [ -f "$PROP_BAK" ] || return 0
+  echo "===== 恢复 persist 属性 ====="
+  while IFS="$(printf '\t')" read -r key val; do
+    [ -z "$key" ] && continue
+    if [ -z "$val" ]; then
+      del_prop "$key"
+      echo "  清除 $key"
+    else
+      setprop "$key" "$val"
+      echo "  恢复 $key = $val"
+    fi
+  done < "$PROP_BAK"
+}
+
+restore_ro() {
+  [ -f "$RO_BAK" ] || return 0
+  echo "===== 恢复 ro 属性（重启后彻底回原值）====="
+  while IFS="$(printf '\t')" read -r key val; do
+    [ -z "$key" ] && continue
+    if command -v resetprop >/dev/null 2>&1; then
+      if [ -z "$val" ]; then
+        resetprop --delete "$key" >/dev/null 2>&1
+        echo "  清除 $key"
+      else
+        resetprop "$key" "$val" >/dev/null 2>&1
+        echo "  恢复 $key = $val"
+      fi
+    fi
+  done < "$RO_BAK"
+}
+
+restore_settings() {
+  [ -f "$SET_BAK" ] || return 0
+  echo "===== 恢复 Settings ====="
+  while IFS="$(printf '\t')" read -r type key val; do
+    [ -z "$type" ] || [ -z "$key" ] && continue
+    case "$type" in
+      secure|system|global) ;;
+      *) continue ;;
+    esac
+    if [ -z "$val" ] || [ "$val" = "null" ]; then
+      settings delete "$type" "$key" >/dev/null 2>&1
+      echo "  清除 $type/$key"
+    else
+      settings put "$type" "$key" "$val" >/dev/null 2>&1
+      echo "  恢复 $type/$key = $val"
+    fi
+  done < "$SET_BAK"
+}
+
+RESTORE=0
+[ "$FORCE" = "0" ] && RESTORE=1
+[ "$FORCE" = "1" ] && [ "$MOTION" = "0" ] && RESTORE=1
+if [ "$RESTORE" = "1" ]; then
+  restore_settings
+  restore_props
+  restore_ro
 fi
 
 # ---- 1. 停注入：卸载 Xposed 桥接 APK ----
@@ -99,14 +171,29 @@ for f in /system_ext/etc/permissions/com.oplus.features_config.xml \
   done
 done
 
-# ---- 4. 清临时文件与自适应快充运行数据 ----
+# ---- 4. 清临时文件 ----
 rm -f /data/local/tmp/motion_cues_port.log
+rm -f /data/local/tmp/coloros_advanced.log
 rm -f /data/local/tmp/AntiDizzyBridge.apk
 rm -f /data/local/tmp/MotionCues.apk
 rm -f /data/local/tmp/mc_feat_*.xml
-rm -rf /data/adb/coloros_fullpower
-rm -rf /data/adb/screenoff_fix
-rm -f /data/adb/screenoff_fix.log
+# 旧版满血/充电运行数据（若从旧版升级或残留）
+# FORCE=0（墓碑）已经恢复完属性，可以整体删除；
+# FORCE=1 可能是“关闭晕动”而非卸载，保留 /data/adb 下的备份给后续卸载用。
+if [ "$FORCE" = "0" ]; then
+  rm -rf /data/adb/coloros_fullpower /data/adb/screenoff_fix
+else
+  if [ "$MOTION" = "0" ]; then
+    rm -rf /data/adb/coloros_fullpower/charge /data/adb/coloros_fullpower/log \
+           /data/adb/coloros_fullpower/payload /data/adb/screenoff_fix
+  fi
+fi
+
+# 模块关闭/卸载前先把系统里的“晕动舒缓显示”归零：桥接即使还没被
+# 卸载/注销，也会在下一轮刷新时看到 enable=0 并注销传感器采样。
+settings put system motion_sickness_relief_switch 0 >/dev/null 2>&1
+settings put secure oplus_customize_antidizzy_enable 0 >/dev/null 2>&1
+rm -f /data/adb/coloros_fullpower/motion_seeded
 
 # ---- 5. 墓碑自毁 ----
 # 只有确认 APK 已经不在了才删自己，否则留着下次开机再试。

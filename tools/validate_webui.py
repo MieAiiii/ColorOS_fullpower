@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Static checks for the ColorOS fullpower WebUI.
+"""Static checks for the ColorOS特性补全 WebUI.
 
 Usage: python tools/validate_webui.py
 """
@@ -60,10 +60,10 @@ def main() -> int:
         print(f"PASS: {len(refs)} $() id references all exist")
 
     required = [
-        "dlg-reset", "dzResetCancel", "dzResetOk",
-        "t0", "t1", "t2", "t3", "t4", "t5",
-        "twAuto", "twMeta", "sProj",
-        "stSwitch", "stMounts", "twApply", "twReset",
+        "page-log", "page-motion",
+        "swMotion", "motionEntry", "motionStatus",
+        "valGain", "valGainY", "valGate", "btnMotionReset",
+        "swReading", "btnApply", "btnRefresh", "btnLog",
     ]
     missing_req = [x for x in required if x not in ids]
     if missing_req:
@@ -72,18 +72,27 @@ def main() -> int:
     else:
         print("PASS: required ids present")
 
-    sw = set(re.findall(r'data-sw="([^"]+)"', text))
-    for key in ("ENABLE_CAMERA", "ENABLE_AUDIO", "ENABLE_RECORDER",
-                "ENABLE_LEGACY", "ENABLE_ANTIDIZZY", "ENABLE_PEAK"):
+    sw = set(re.findall(r'data-cfg="([^"]+)"', text))
+    for key in (
+        "ENABLE_ADVANCED", "ENABLE_ANTIDIZZY", "ENABLE_LEGACY",
+        "ENABLE_MATERIAL_BLUR", "ENABLE_FULL_AOD", "ENABLE_FOLLOW_HAND",
+        "ENABLE_GAME_MEMC", "ENABLE_HDR10P_ADAPTIVE",
+    ):
         if key not in sw:
             print(f"FAIL: switch {key} missing")
             ok = False
 
-    # Test-mode semantics are fixed in the Bridge: 0 off, 1 sine, 2 vehicle,
-    # 3 walking, 4 handheld, 5 vertical drift.
-    for mode in ("0", "1", "2", "3", "4", "5"):
-        if f"dzSetTest({mode})" not in js:
-            print(f"FAIL: test mode {mode} not bound")
+    for token in (
+        'data-open="page-motion"', 'data-close="page-motion"',
+        "motionparam", "motionreset", "MOTION_GAIN", "MOTION_GAIN_Y", "MOTION_GATE",
+    ):
+        if token not in text:
+            print(f"FAIL: UI control token missing: {token}")
+            ok = False
+
+    for stale in ("已移除：", "9.1.2", "刷新率与分辨率都已退出本模块", "vRefresh"):
+        if stale in text:
+            print(f"FAIL: stale copy remains: {stale}")
             ok = False
 
     print("RESULT:", "PASS" if ok else "FAIL")

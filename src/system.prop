@@ -1,16 +1,18 @@
 # ============================================================
-#  ColorOS 满血特性 6.0
+#  ColorOS特性补全 10.0
 #  作者：三重 / 酷安@MieAi
 #
-#  核心层：动画与模糊。这些键在所有 ColorOS 12+ 上都存在或被框架
-#  优雅忽略，且没有「写了但硬件撑不住就崩」的风险，所以常驻写入，
-#  不设开关。WebUI 里以「常驻」标识展示实际值，不伪装成可关闭。
+#  本模块保留：
+#    1) 动画 / 动效 / 模糊属性的常驻补全（本文件）
+#    2) 晕动舒缓显示（post-fs-data.sh + service.sh + cleanup.sh）
+#    3) 可选的显示 / 模糊 / AOD / 游戏增强（service.sh + advanced.sh）
+#
+#  已彻底移除：满血快充、fastchg 固定表、峰值守护、系统温控、
+#  相机/音频/录屏属性。不要在这里重新加入这些键。
+#  WebUI 已重新加入，入口在 webroot/；刷新率仍不在此处写入。
 #
 #  由 KernelSU 的 ksud 在 post-fs-data 阶段以 resetprop 语义写入 ——
 #  可覆盖系统已存在的 ro.*，这是脚本里的 setprop 做不到的。
-#
-#  可选层（相机/音频/录屏/旧版键/晕动舒缓）由 post-fs-data.sh
-#  按 config.conf 决定，见 WebUI。
 #
 #  ⚠ 语法：必须 KEY=VALUE，等号两边不能有空格。
 # ============================================================
@@ -41,3 +43,36 @@ ro.oplus.display.disable.volume_blur=0
 
 # 小窗 / 分屏模糊快照。由 SystemUI 读取。
 persist.oplus.flexible.blur_snapshot_enable=true
+
+# 旧版 / 通用高斯模糊档位。ColorOS 16 及以下、部分 17 组件仍可能读取。
+ro.oplus.gaussianlevel=3
+
+# Launcher 启动/退出模糊。部分版本仍读取。
+ro.launcher.blur.appLaunch=1
+
+# Material / 系统材质模糊。ColorOS 17 的凝光/亚克力视效会读取。
+persist.sys.oplus.material_blur_switch=true
+
+# 媒体面板（音量/媒体控制）背景模糊。
+ro.surface_flinger.media_panel_bg_blur=1
+
+# 不把模糊标记为“昂贵”，避免部分组件在低内存时主动降级/关闭模糊。
+ro.sf.blurs_are_expensive=0
+
+# SystemUI 动态模糊，部分 ColorOS 17 组件读取。
+persist.sys.oplus.systemui.dynamic_blur=true
+
+
+# ==================== HDR / 显示增强 ====================
+
+# HDR10+ adaptive 由 advanced.sh / WebUI 运行时控制，不再写死在 system.prop
+# 这样 WebUI 才能把它关掉；默认值在 config.conf 中为 1。
+# 不支持的项目不要强行打开：
+#   hdr10_adaptive / hdrvivid_adaptive / ultra_resolution / video_transition /
+#   ai_sdr_to_hdr / backlight_smooth / mml_color_adaptive 均为 0。
+
+
+# ==================== AOD ====================
+
+# 部分 ColorOS 17 组件读取的 AOD 支持标记；全屏 AOD 的开关在 advanced.sh。
+ro.oplus.panoramic_aod_support=1
