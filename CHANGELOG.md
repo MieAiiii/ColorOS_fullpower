@@ -1,5 +1,17 @@
 # 更新日志
 
+## v10.1（2026-11-22）
+
+- 新增 `webroot/adapt.sh`：运行时探测 ColorOS 主版本、Settings 键是否存在、PQ 属性是否存在、晕动桥接是否安装
+- 新增适配策略 `ADAPT_MODE=auto|compat|full`；`ctl.sh status` 输出 `ROM_MAJOR`、`ADAPT_MODE`、`ADAPT_EFFECTIVE` 与 18 个 `SUP_*`
+- `advanced.sh` 改为只写当前系统存在的键：不支持的项记 `N/A`，不创建假 Settings/PQ 键；兼容模式下 6 个实验项强制归零
+- WebUI 设备卡后新增“适配策略”卡片，展示当前策略与能力；按 `SUP_*` 动态禁用/隐藏功能，未支持项显示“当前机型未声明支持”
+- 能力探测改为单次缓存，避免 `status` 与 `apply` 重复扫 Settings；WebUI 执行超时从 2.4 秒放宽到 5 秒
+- `system.prop` 去掉 `ro.sf.blurs_are_expensive=0`、`ro.oplus.panoramic_aod_support=1`、`ro.surface_flinger.media_panel_bg_blur=1` 等硬件能力/性能强声明，交给系统按机型判断
+- `customize.sh` 配置模板加入 `ADAPT_MODE=auto`；升级安装自动补键
+- 版本提升到 `10.1 / 1001`
+- 验证：PC mock 覆盖 ColorOS 17 全量 / ColorOS 16 精简 / ColorOS 17 残缺三套环境；手机已断开，未做 10.1 真机复测
+
 ## v10.0（2026-11-22）
 
 - 模块更名为 **ColorOS特性补全**，版本提升到 `10.0 / 1000`

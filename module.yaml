@@ -1,5 +1,5 @@
 schemaVersion: 1
 id: coloros_fullpower
 name: ColorOS特性补全
-summary: ColorOS 16/17 动画、模糊、AOD、手势与晕动舒缓补全；晕动开关秒级响应，WebUI 内置二级控制页
+summary: ColorOS 16/17 动画、模糊、AOD、手势与晕动舒缓补全；新增机型能力探测与自动/兼容/全量适配策略，晕动开关秒级响应
 description: README.md

@@ -63,6 +63,8 @@
 .motion-status .t{font-size:var(--fs-body);font-weight:600}
 .motion-status .s{margin-top:2px;font-size:var(--fs-footnote);color:var(--on-surface-summary)}
 .motion-status .v{font-size:var(--fs-footnote);color:var(--on-surface-secondary)}
+.row.unsupported{opacity:.55}
+.row.unsupported .row-summary{color:var(--on-surface-actions)}
 </style>
 </head>
 <body>
@@ -71,7 +73,7 @@
   <div class="bar-inner">
     <h2>ColorOS特性补全</h2>
     <span class="bar-sub" id="barSub"></span>
-    <span class="badge">10.0</span>
+    <span class="badge">10.1</span>
   </div>
 </header>
 
@@ -90,10 +92,29 @@
 
   <!-- 设备 -->
   <div class="card device-card" id="topCard">
-    <span class="badge ver">v10.0</span>
+    <span class="badge ver">v10.1</span>
     <div class="model" id="devModel">—</div>
     <div class="rom" id="devRom">—</div>
   </div>
+
+  <!-- 适配策略 -->
+  <div class="group-title">适配策略</div>
+  <div class="card">
+    <div class="row">
+      <div class="row-icon t-teal"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h10M4 17h13"/></svg></div>
+      <div class="row-main">
+        <div class="row-title" id="adaptTitle">自动适配</div>
+        <div class="row-summary" id="adaptDetail">正在检测当前机型能力…</div>
+      </div>
+      <div class="row-value" id="adaptBadge">—</div>
+    </div>
+    <div class="seg" id="adaptSeg">
+      <button data-adapt="auto" class="on">自动<span class="desc">按机型能力</span></button>
+      <button data-adapt="compat">兼容<span class="desc">只留支持项</span></button>
+      <button data-adapt="full">全量<span class="desc">显示全部</span></button>
+    </div>
+  </div>
+  <div class="group-note">自动模式：ColorOS 17 且检测到材质模糊 / 全屏 AOD 键时走全量，其余走兼容。兼容模式隐藏当前机型未声明支持的实验项，不创建假键。</div>
 
   <!-- 总开关 -->
   <div class="group-title">模块总开关</div>
@@ -130,7 +151,7 @@
         <div class="row-title">旧版模糊键</div>
         <div class="row-summary">ColorOS 16 及以下组件兼容 · 改动后需重启</div>
       </div>
-      <div class="switch" data-cfg="ENABLE_LEGACY" data-restart="1"><span class="knob"></span></div>
+      <div class="switch" data-cfg="ENABLE_LEGACY" data-feature="LEGACY" data-restart="1"><span class="knob"></span></div>
     </div>
   </div>
 
@@ -169,15 +190,15 @@
     <div class="row">
       <div class="row-icon t-teal"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="4" y="5" width="16" height="14" rx="3"/><path d="M4 10h16"/></svg></div>
       <div class="row-main"><div class="row-title">材质模糊</div><div class="row-summary">ColorOS 17 凝光 / 亚克力视效</div></div>
-      <div class="switch" data-cfg="ENABLE_MATERIAL_BLUR"><span class="knob"></span></div>
+      <div class="switch" data-cfg="ENABLE_MATERIAL_BLUR" data-feature="MATERIAL_BLUR"><span class="knob"></span></div>
     </div>
     <div class="row">
       <div class="row-main"><div class="row-title">材质描边</div><div class="row-summary">卡片与控件细描边层级</div></div>
-      <div class="switch" data-cfg="ENABLE_MATERIAL_STROKE"><span class="knob"></span></div>
+      <div class="switch" data-cfg="ENABLE_MATERIAL_STROKE" data-feature="MATERIAL_STROKE"><span class="knob"></span></div>
     </div>
     <div class="row">
       <div class="row-main"><div class="row-title">桌面壁纸模糊</div><div class="row-summary">桌面与文件夹背景虚化</div></div>
-      <div class="switch" data-cfg="ENABLE_DESKTOP_BLUR"><span class="knob"></span></div>
+      <div class="switch" data-cfg="ENABLE_DESKTOP_BLUR" data-feature="DESKTOP_BLUR"><span class="knob"></span></div>
     </div>
   </div>
 
@@ -188,15 +209,15 @@
     <div class="row">
       <div class="row-icon t-orange"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><path d="M12 5v7l4 2"/></svg></div>
       <div class="row-main"><div class="row-title">全屏 AOD</div><div class="row-summary">全天候显示铺满整屏</div></div>
-      <div class="switch" data-cfg="ENABLE_FULL_AOD"><span class="knob"></span></div>
+      <div class="switch" data-cfg="ENABLE_FULL_AOD" data-feature="FULL_AOD"><span class="knob"></span></div>
     </div>
     <div class="row">
       <div class="row-main"><div class="row-title">锁屏充电动画</div><div class="row-summary">插入充电器时的 AOD 提示动画</div></div>
-      <div class="switch" data-cfg="ENABLE_AOD_CHARGE"><span class="knob"></span></div>
+      <div class="switch" data-cfg="ENABLE_AOD_CHARGE" data-feature="AOD_CHARGE"><span class="knob"></span></div>
     </div>
     <div class="row">
       <div class="row-main"><div class="row-title">AOD 工坊</div><div class="row-summary">AOD 自定义小组件支持</div></div>
-      <div class="switch" data-cfg="ENABLE_AOD_WORKSHOP"><span class="knob"></span></div>
+      <div class="switch" data-cfg="ENABLE_AOD_WORKSHOP" data-feature="AOD_WORKSHOP"><span class="knob"></span></div>
     </div>
   </div>
 
@@ -206,7 +227,7 @@
     <div class="row">
       <div class="row-icon t-green"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M4 12h16M15 8l4 4-4 4"/></svg></div>
       <div class="row-main"><div class="row-title">侧滑跟手</div><div class="row-summary">返回手势动画跟手</div></div>
-      <div class="switch" data-cfg="ENABLE_FOLLOW_HAND"><span class="knob"></span></div>
+      <div class="switch" data-cfg="ENABLE_FOLLOW_HAND" data-feature="FOLLOW_HAND"><span class="knob"></span></div>
     </div>
   </div>
 
@@ -217,15 +238,15 @@
     <div class="row">
       <div class="row-icon t-red"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M6 8h12a4 4 0 0 1 0 8h-12a4 4 0 0 1 0-8Z"/><path d="M9 12h2M10 11v2M15 11h.01M17 13h.01"/></svg></div>
       <div class="row-main"><div class="row-title">游戏 MEMC</div><div class="row-summary">运动补偿 / 插帧候选</div></div>
-      <div class="switch" data-cfg="ENABLE_GAME_MEMC"><span class="knob"></span></div>
+      <div class="switch" data-cfg="ENABLE_GAME_MEMC" data-feature="GAME_MEMC"><span class="knob"></span></div>
     </div>
     <div class="row">
       <div class="row-main"><div class="row-title">游戏色彩增强</div><div class="row-summary">游戏画面色彩增强候选</div></div>
-      <div class="switch" data-cfg="ENABLE_GAME_COLOR"><span class="knob"></span></div>
+      <div class="switch" data-cfg="ENABLE_GAME_COLOR" data-feature="GAME_COLOR"><span class="knob"></span></div>
     </div>
     <div class="row">
       <div class="row-main"><div class="row-title">HDR10+ adaptive</div><div class="row-summary">HDR10+ 自适应 · 默认开启</div></div>
-      <div class="switch" data-cfg="ENABLE_HDR10P_ADAPTIVE"><span class="knob"></span></div>
+      <div class="switch" data-cfg="ENABLE_HDR10P_ADAPTIVE" data-feature="HDR10P"><span class="knob"></span></div>
     </div>
   </div>
 
@@ -241,33 +262,33 @@
   </div>
 
   <!-- 实验功能 -->
-  <div class="group-title">实验功能 · 默认关闭 <span class="badge warn">实验</span></div>
-  <div class="group-note">写入本机未默认启用的候选键；是否生效取决于屏幕硬件与当前 ColorOS 版本，可能没有可见变化。</div>
-  <div class="card">
+  <div class="group-title" id="expGroupTitle">实验功能 · 默认关闭 <span class="badge warn">实验</span></div>
+  <div class="group-note" id="expGroupNote">写入本机未默认启用的候选键；是否生效取决于屏幕硬件与当前 ColorOS 版本，可能没有可见变化。</div>
+  <div class="card" id="expCard">
     <div class="row">
       <div class="row-icon t-purple"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/></svg></div>
       <div class="row-main"><div class="row-title">全天全景 AOD</div><div class="row-summary">全天候全景显示 · 耗电与烧屏风险</div></div>
-      <div class="switch" data-cfg="ENABLE_ALL_DAY_AOD"><span class="knob"></span></div>
+      <div class="switch" data-cfg="ENABLE_ALL_DAY_AOD" data-feature="ALL_DAY_AOD" data-optional="1"><span class="knob"></span></div>
     </div>
     <div class="row">
       <div class="row-main"><div class="row-title">HDR10 adaptive</div><div class="row-summary">HDR10 自适应候选 · 本机未声明支持</div></div>
-      <div class="switch" data-cfg="ENABLE_HDR10_ADAPTIVE"><span class="knob"></span></div>
+      <div class="switch" data-cfg="ENABLE_HDR10_ADAPTIVE" data-feature="HDR10" data-optional="1"><span class="knob"></span></div>
     </div>
     <div class="row">
       <div class="row-main"><div class="row-title">HDR Vivid adaptive</div><div class="row-summary">HDR Vivid 自适应候选 · 本机未声明支持</div></div>
-      <div class="switch" data-cfg="ENABLE_HDRVIVID_ADAPTIVE"><span class="knob"></span></div>
+      <div class="switch" data-cfg="ENABLE_HDRVIVID_ADAPTIVE" data-feature="HDRVIVID" data-optional="1"><span class="knob"></span></div>
     </div>
     <div class="row">
       <div class="row-main"><div class="row-title">视频超分</div><div class="row-summary">视频分辨率增强候选 · 可能无效果</div></div>
-      <div class="switch" data-cfg="ENABLE_ULTRA_RESOLUTION"><span class="knob"></span></div>
+      <div class="switch" data-cfg="ENABLE_ULTRA_RESOLUTION" data-feature="ULTRA_RES" data-optional="1"><span class="knob"></span></div>
     </div>
     <div class="row">
       <div class="row-main"><div class="row-title">MML 色彩自适应</div><div class="row-summary">MML 色彩管理候选 · 可能无效果</div></div>
-      <div class="switch" data-cfg="ENABLE_MML_COLOR_ADAPTIVE"><span class="knob"></span></div>
+      <div class="switch" data-cfg="ENABLE_MML_COLOR_ADAPTIVE" data-feature="MML_COLOR" data-optional="1"><span class="knob"></span></div>
     </div>
     <div class="row">
       <div class="row-main"><div class="row-title">AI SDR→HDR</div><div class="row-summary">通过 SDR adaptive 入口尝试开启</div></div>
-      <div class="switch" data-cfg="ENABLE_AI_SDR_ADAPTIVE"><span class="knob"></span></div>
+      <div class="switch" data-cfg="ENABLE_AI_SDR_ADAPTIVE" data-feature="AI_SDR" data-optional="1"><span class="knob"></span></div>
     </div>
   </div>
 
@@ -443,7 +464,7 @@ function shRaw(cmd){
       setTimeout(function(){
         if(settled) return;
         if(WORK_FORM===0) callFn();
-        setTimeout(function(){ if(!settled) finish({errno:-2,stdout:"",stderr:"TIMEOUT"}); },2400);
+        setTimeout(function(){ if(!settled) finish({errno:-2,stdout:"",stderr:"TIMEOUT"}); },5000);
       },900);
     }
   });
@@ -488,6 +509,64 @@ function ctlCmd(args){
        + 'if [ -n "$D" ]; then sh "$D/webroot/ctl.sh" '+args+'; else echo ERR=nocltl; fi';
 }
 
+/* ================= 机型适配展示 ================= */
+function applyAdaptation(d){
+  var effective=d.ADAPT_EFFECTIVE||"compat";
+  var mode=d.ADAPT_MODE||"auto";
+  var sws=document.querySelectorAll(".switch[data-feature]");
+  var hidden=0, disabled=0, expVisible=0;
+  for(var i=0;i<sws.length;i++){
+    var sw=sws[i];
+    var feature=sw.getAttribute("data-feature");
+    var optional=sw.getAttribute("data-optional")==="1";
+    var row=sw.parentNode;
+    while(row && !(row.classList && row.classList.contains("row"))) row=row.parentNode;
+    if(!row) continue;
+    var sum=row.querySelector(".row-summary");
+    if(sum && !sum.getAttribute("data-base")) sum.setAttribute("data-base",sum.textContent);
+    var ok=(d["SUP_"+feature]!=="0");
+    row.style.display="";
+    if(ok){
+      row.classList.remove("unsupported");
+      sw.classList.remove("disabled");
+      if(sum) sum.textContent=sum.getAttribute("data-base");
+      if(optional) expVisible++;
+    }else{
+      disabled++;
+      row.classList.add("unsupported");
+      sw.classList.add("disabled");
+      if(sum) sum.textContent=sum.getAttribute("data-base")+" · 当前机型未声明支持";
+      if(optional && effective!=="full"){
+        row.style.display="none";
+        hidden++;
+      }else if(optional){
+        expVisible++;
+      }
+    }
+  }
+
+  var expTitle=$("expGroupTitle"), expNote=$("expGroupNote"), expCard=$("expCard");
+  var showExp=expVisible>0;
+  if(expTitle) expTitle.style.display=showExp?"":"none";
+  if(expNote) expNote.style.display=showExp?"":"none";
+  if(expCard) expCard.style.display=showExp?"":"none";
+
+  var title={auto:"自动适配",compat:"兼容优先",full:"全量显示"}[mode]||"自动适配";
+  setv("adaptTitle",title);
+  setv("adaptBadge",effective==="full"?"全量":"兼容");
+  var badge=$("adaptBadge");
+  if(badge) badge.className="row-value "+(effective==="full"?"ok":"warn");
+  var detail="ColorOS "+(d.ROM_MAJOR||"?")+" · "+(effective==="full"?"按全量能力应用":"仅应用已声明支持项");
+  if(disabled) detail+=" · 禁用 "+disabled+" 项";
+  if(hidden) detail+=" · 已隐藏 "+hidden+" 项";
+  setv("adaptDetail",detail);
+
+  var segs=document.querySelectorAll("[data-adapt]");
+  for(var j=0;j<segs.length;j++){
+    segs[j].classList.toggle("on", segs[j].getAttribute("data-adapt")===mode);
+  }
+}
+
 /* ================= 读取状态 ================= */
 function loadStatus(){
   sh(ctlCmd("status")).then(function(r){
@@ -523,6 +602,7 @@ function loadStatus(){
       setSwitch(list[i], v==="1");
     }
     setSwitch($("swReading"), d.READING_MODE==="1");
+    applyAdaptation(d);
 
     var motionSw=$("swMotion");
     var bridgeOn = d.CFG_ENABLE_ANTIDIZZY==="1";
@@ -679,6 +759,7 @@ function bindSwitches(){
     (function(sw){
       sw.addEventListener("click",function(ev){
         ev.stopPropagation();
+        if(sw.classList.contains("disabled")) return;
         var key=sw.getAttribute("data-cfg");
         var next=!sw.classList.contains("on");
         setSwitch(sw,next);
@@ -727,6 +808,29 @@ function bindMotion(){
     });
   });
 }
+function bindAdapt(){
+  var segs=document.querySelectorAll("[data-adapt]");
+  for(var i=0;i<segs.length;i++){
+    (function(btn){
+      btn.addEventListener("click",function(ev){
+        ev.stopPropagation();
+        var mode=btn.getAttribute("data-adapt");
+        sh(ctlCmd("adaptmode "+mode)).then(function(r){
+          if(r.errno!==0 || (r.stdout||"").indexOf("ADAPT_MODE=")<0){
+            toast("适配策略写入失败");
+            return;
+          }
+          toast("已切换为"+(mode==="auto"?"自动适配":mode==="compat"?"兼容优先":"全量显示")+"，正在应用");
+          sh(ctlCmd("apply")).then(function(a){
+            if(a.errno!==0) toast("策略已保存；应用失败，重启后生效");
+            setTimeout(loadStatus,350);
+          });
+        });
+      });
+    })(segs[i]);
+  }
+}
+
 function bindButtons(){
   $("btnApply").addEventListener("click",function(){
     toast("正在应用…");
@@ -771,8 +875,11 @@ bindSwitches();
 bindReading();
 bindMotion();
 bindMotionParams();
+bindAdapt();
 bindButtons();
 loadStatus();
 </script>
 </body>
 </html>
+
+

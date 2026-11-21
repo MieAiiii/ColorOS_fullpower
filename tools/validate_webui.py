@@ -64,6 +64,8 @@ def main() -> int:
         "swMotion", "motionEntry", "motionStatus",
         "valGain", "valGainY", "valGate", "btnMotionReset",
         "swReading", "btnApply", "btnRefresh", "btnLog",
+        "adaptTitle", "adaptDetail", "adaptBadge", "adaptSeg",
+        "expGroupTitle", "expGroupNote", "expCard",
     ]
     missing_req = [x for x in required if x not in ids]
     if missing_req:
@@ -82,12 +84,64 @@ def main() -> int:
             print(f"FAIL: switch {key} missing")
             ok = False
 
+    features = (
+        "LEGACY", "MATERIAL_BLUR", "MATERIAL_STROKE", "DESKTOP_BLUR",
+        "FULL_AOD", "AOD_CHARGE", "AOD_WORKSHOP", "FOLLOW_HAND",
+        "GAME_MEMC", "GAME_COLOR", "HDR10P",
+    )
+    optional = (
+        "ALL_DAY_AOD", "HDR10", "HDRVIVID", "ULTRA_RES", "MML_COLOR", "AI_SDR",
+    )
+    for feature in features:
+        if f'data-feature="{feature}"' not in text:
+            print(f"FAIL: data-feature={feature} missing")
+            ok = False
+    for feature in optional:
+        if not re.search(
+            rf'data-feature="{feature}"[^>]*data-optional="1"', text
+        ):
+            print(f"FAIL: optional feature marker missing: {feature}")
+            ok = False
+
+    support = (
+        "MATERIAL_BLUR", "MATERIAL_STROKE", "DESKTOP_BLUR", "FULL_AOD",
+        "AOD_CHARGE", "AOD_WORKSHOP", "ALL_DAY_AOD", "FOLLOW_HAND",
+        "GAME_MEMC", "GAME_COLOR", "HDR10P", "HDR10", "HDRVIVID",
+        "ULTRA_RES", "MML_COLOR", "AI_SDR", "LEGACY", "MOTION",
+    )
+    ctl = (ROOT / "src" / "webroot" / "ctl.sh").read_text(encoding="utf-8")
+    adapt = (ROOT / "src" / "webroot" / "adapt.sh").read_text(encoding="utf-8")
+    for feature in support:
+        if f"ADAPT_SUP_{feature}" not in adapt:
+            print(f"FAIL: adapt SUP_{feature} missing")
+            ok = False
+    if "SUP_${f}" not in ctl and "SUP_" not in ctl:
+        print("FAIL: ctl support output missing")
+        ok = False
+    if "adaptmode" not in ctl or "ADAPT_EFFECTIVE" not in ctl:
+        print("FAIL: ctl adaptation command/status missing")
+        ok = False
+    if not (ROOT / "src" / "webroot" / "adapt.sh").is_file():
+        print("FAIL: adapt.sh missing")
+        ok = False
+
     for token in (
         'data-open="page-motion"', 'data-close="page-motion"',
         "motionparam", "motionreset", "MOTION_GAIN", "MOTION_GAIN_Y", "MOTION_GATE",
+        "ADAPT_MODE", "ADAPT_EFFECTIVE", "data-adapt", "applyAdaptation",
+        "bindAdapt", "SUP_",
     ):
         if token not in text:
             print(f"FAIL: UI control token missing: {token}")
+            ok = False
+
+    for guard in (
+        'sw.classList.contains("disabled")',
+        "row.classList.add(\"unsupported\")",
+        'row.style.display="none"',
+    ):
+        if guard not in text:
+            print(f"FAIL: adaptation guard missing: {guard}")
             ok = False
 
     for stale in ("已移除：", "9.1.2", "刷新率与分辨率都已退出本模块", "vRefresh"):

@@ -4,13 +4,23 @@
 >
 > 作者：三重 / 酷安@MieAi
 >
-> 当前版本：`10.0`（versionCode `1000`）
+> 当前版本：`10.1`（versionCode `1001`）
 
 ## 简介
 
 面向 **ColorOS 16 / 17** 的显示与动效补全模块。它不修改系统分区，也不做机型伪装；能力通过启动属性、运行时 Settings 写入和 WebUI 开关实现，卸载或重启后可恢复。
 
 10.0 的重点是晕动舒缓：桥接改为秒级响应系统开关，WebUI 新增“晕动控制”二级页，可调强度、纵向增益和触发阈值。模块本身只提供功能入口，默认不主动打开任何显示项。
+
+10.1 的重点是 **机型适配**：新增运行时能力探测，按当前 ColorOS 16/17 实际存在的 Settings 键与 PQ 属性决定写不写、显不显示；WebUI 增加“适配策略”卡片，可切换自动 / 兼容 / 全量，未声明支持的项显示为不可用，兼容模式下隐藏实验项。
+
+## 机型适配
+
+- **自动**：ColorOS 17 且检测到材质模糊与全屏 AOD 键时按全量；其余按兼容。默认策略。
+- **兼容**：只应用 ColorOS 16/17 的稳定项；实验项强制为 0，不创建系统没有的 Settings/PQ 键。
+- **全量**：显示全部项；物理不支持的项仍然禁用、不写入。
+- 支持的判断依据是 `settings list` / `settings get`、`getprop` 与桥接包是否安装，不靠机型名硬编码。
+- `system.prop` 不再强制声明媒体面板模糊、AOD 硬件支持，也不再关闭“模糊昂贵”提示；这些能力交给系统按硬件自行判断，避免低配机掉帧或出现不可用入口。
 
 ## 界面预览
 
@@ -19,7 +29,7 @@
   <img src="docs/images/webui-10-motion.png" width="260" alt="晕动控制二级页">
 </p>
 
-<p align="center"><sub>左：主页 · 右：晕动控制二级页</sub></p>
+<p align="center"><sub>左：主页 · 右：晕动控制二级页（10.0 截图；10.1 在设备卡下方新增适配策略卡片）</sub></p>
 
 ## 功能
 
@@ -81,6 +91,7 @@
 
 | 键 | 默认 | 说明 |
 |---|---|---|
+| `ADAPT_MODE` | `auto` | 适配策略：`auto` / `compat` / `full` |
 | `ENABLE_ADVANCED` | `1` | 高级显示层总开关 |
 | `ENABLE_ANTIDIZZY` | `1` | 安装并启用晕动桥接；实际显示另由二级页控制 |
 | `ENABLE_LEGACY` | `0` | ColorOS 16 及以下旧版模糊键 |
@@ -116,11 +127,13 @@ src/                    模块源码（打包内容）
 ├── webroot/
 │   ├── index.html
 │   ├── theme.css
+│   ├── adapt.sh
 │   └── ctl.sh
 └── files/AntiDizzyBridge.apk
 module.yaml             KernelSU 收录元数据
 .github/workflows/release.yml
 tools/validate_webui.py WebUI 结构校验
+tools/adapt_mock_test.sh 能力探测/写入 mock 回归
 ```
 
 ## 恢复
@@ -148,7 +161,10 @@ GitHub Actions 在推送 `v*` tag 时从 `src/` 打包单个 zip，并创建 Rel
 
 ```bash
 python tools/validate_webui.py
+bash tools/adapt_mock_test.sh
 ```
+
+`adapt_mock_test.sh` 用 mock 的 `getprop` / `settings` / `pm` 覆盖三套环境：ColorOS 17 全量、ColorOS 16 精简、ColorOS 17 残缺；检查 `ADAPT_EFFECTIVE`、`SUP_*`、只写存在的键、兼容模式隐藏/归零实验项。10.1 发布前手机已断开，未做真机复测；真机表现以实际机型为准。
 
 ## 致谢
 

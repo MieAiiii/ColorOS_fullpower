@@ -115,6 +115,8 @@ main{padding:6px var(--pad-x) 0}
 .row-summary{margin-top:2px;font-size:var(--fs-footnote);color:var(--on-surface-summary);line-height:1.5}
 .row-summary.warn{color:var(--error)}
 .row-value{font-size:var(--fs-headline);font-weight:500;color:var(--on-surface-secondary);white-space:nowrap}
+.row-value.warn{color:var(--error)}
+.row-value.ok{color:#2E8B3D}
 .row-value .unit{font-size:var(--fs-footnote);color:var(--on-surface-actions)}
 .row.align-top{align-items:flex-start}
 

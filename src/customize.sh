@@ -1,15 +1,15 @@
 #!/system/bin/sh
 # ============================================================
-#  ColorOS特性补全 10.0 —— 安装期脚本
+#  ColorOS特性补全 10.1 —— 安装期脚本
 #  作者：三重 / 酷安@MieAi
 #
-#  10.0：动画/模糊/AOD/游戏显示补全 + 晕动桥接与 WebUI 二级控制页。
+#  10.1：动画/模糊/AOD/游戏显示补全 + 晕动桥接；新增机型能力探测与适配策略。
 #  安装时会清掉旧版遗留的 bin/ odm/ webroot/、充电数据与旧配置键。
 # ============================================================
 
 ui_print " "
 ui_print "=============================================="
-ui_print " ColorOS特性补全 10.0"
+ui_print " ColorOS特性补全 10.1"
 ui_print " 三重 / 酷安@MieAi"
 ui_print "=============================================="
 ui_print " 设备: $(getprop ro.product.marketname)$(getprop ro.product.model)"
@@ -55,10 +55,11 @@ OLD_CFG=/data/adb/modules/coloros_fullpower/config.conf
 if [ ! -f "$CFG" ] && [ -f "$OLD_CFG" ]; then
   cp -f "$OLD_CFG" "$CFG" 2>/dev/null
 fi
-CONFIG_KEYS="ENABLE_LEGACY ENABLE_ANTIDIZZY ENABLE_ADVANCED ENABLE_ALL_DAY_AOD ENABLE_HDR10_ADAPTIVE ENABLE_HDRVIVID_ADAPTIVE ENABLE_ULTRA_RESOLUTION ENABLE_MML_COLOR_ADAPTIVE ENABLE_AI_SDR_ADAPTIVE ENABLE_FULL_AOD ENABLE_AOD_CHARGE ENABLE_AOD_WORKSHOP ENABLE_DESKTOP_BLUR ENABLE_MATERIAL_BLUR ENABLE_MATERIAL_STROKE ENABLE_FOLLOW_HAND ENABLE_GAME_MEMC ENABLE_GAME_COLOR ENABLE_HDR10P_ADAPTIVE"
+CONFIG_KEYS="ADAPT_MODE ENABLE_LEGACY ENABLE_ANTIDIZZY ENABLE_ADVANCED ENABLE_ALL_DAY_AOD ENABLE_HDR10_ADAPTIVE ENABLE_HDRVIVID_ADAPTIVE ENABLE_ULTRA_RESOLUTION ENABLE_MML_COLOR_ADAPTIVE ENABLE_AI_SDR_ADAPTIVE ENABLE_FULL_AOD ENABLE_AOD_CHARGE ENABLE_AOD_WORKSHOP ENABLE_DESKTOP_BLUR ENABLE_MATERIAL_BLUR ENABLE_MATERIAL_STROKE ENABLE_FOLLOW_HAND ENABLE_GAME_MEMC ENABLE_GAME_COLOR ENABLE_HDR10P_ADAPTIVE"
 if [ -f "$CFG" ]; then
   awk -F= -v keys="$CONFIG_KEYS" 'BEGIN{n=split(keys,a," "); for(i=1;i<=n;i++) keep[a[i]]=1} keep[$1]' "$CFG" > "$CFG.tmp" 2>/dev/null \
     && mv -f "$CFG.tmp" "$CFG" 2>/dev/null
+  grep -q '^ADAPT_MODE=' "$CFG" 2>/dev/null || echo 'ADAPT_MODE=auto' >> "$CFG"
   grep -q '^ENABLE_LEGACY=' "$CFG" 2>/dev/null || echo 'ENABLE_LEGACY=0' >> "$CFG"
   grep -q '^ENABLE_ANTIDIZZY=' "$CFG" 2>/dev/null || echo 'ENABLE_ANTIDIZZY=1' >> "$CFG"
   grep -q '^ENABLE_ADVANCED=' "$CFG" 2>/dev/null || echo 'ENABLE_ADVANCED=1' >> "$CFG"
@@ -82,11 +83,13 @@ if [ -f "$CFG" ]; then
 fi
 if [ ! -f "$CFG" ]; then
   cat > "$CFG" <<'CFGEOF'
-# ColorOS特性补全 10.0 配置
+# ColorOS特性补全 10.1 配置
 # 1 = 启用，0 = 关闭。改完重启生效。
 # 动画/模糊核心在 system.prop 常驻，不受这里控制。
 # 刷新率与分辨率不在本模块修改，保持系统默认。
+# ADAPT_MODE：auto=按机型能力自动，compat=只应用稳定项，full=显示全部（物理不支持仍不写）。
 
+ADAPT_MODE=auto
 ENABLE_LEGACY=0
 ENABLE_ANTIDIZZY=1
 ENABLE_ADVANCED=1
@@ -199,3 +202,4 @@ ui_print " 安装完成，重启生效"
 ui_print " 开机异常时：启动阶段连按音量键进入安全模式"
 ui_print "=============================================="
 ui_print " "
+

@@ -28,8 +28,13 @@ jobs:
           test -f src/post-fs-data.sh
           test -f src/service.sh
           test -f src/webroot/index.html
+          test -f src/webroot/adapt.sh
           test -f src/files/AntiDizzyBridge.apk
+          bash -n src/webroot/adapt.sh
+          bash -n src/webroot/ctl.sh
+          bash -n src/advanced.sh
           python tools/validate_webui.py
+          bash tools/adapt_mock_test.sh
 
       - name: Build module zip
         run: |

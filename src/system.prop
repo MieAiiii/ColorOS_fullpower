@@ -1,5 +1,5 @@
 # ============================================================
-#  ColorOS特性补全 10.0
+#  ColorOS特性补全 10.1
 #  作者：三重 / 酷安@MieAi
 #
 #  本模块保留：
@@ -54,10 +54,13 @@ ro.launcher.blur.appLaunch=1
 persist.sys.oplus.material_blur_switch=true
 
 # 媒体面板（音量/媒体控制）背景模糊。
-ro.surface_flinger.media_panel_bg_blur=1
+# 不在这里强制打开：部分 ColorOS 16 机型没有该 SurfaceFlinger 能力，
+# 强行声明可能让音量面板出现黑块或闪烁；由系统默认决定。
+# ro.surface_flinger.media_panel_bg_blur=1
 
-# 不把模糊标记为“昂贵”，避免部分组件在低内存时主动降级/关闭模糊。
-ro.sf.blurs_are_expensive=0
+# 不写 ro.sf.blurs_are_expensive=0：
+# 这是性能提示，不是功能开关。低内存/低端机强行关闭降级会导致
+# 全局模糊掉帧；交给系统按硬件档位自行判断更稳。
 
 # SystemUI 动态模糊，部分 ColorOS 17 组件读取。
 persist.sys.oplus.systemui.dynamic_blur=true
@@ -74,5 +77,8 @@ persist.sys.oplus.systemui.dynamic_blur=true
 
 # ==================== AOD ====================
 
-# 部分 ColorOS 17 组件读取的 AOD 支持标记；全屏 AOD 的开关在 advanced.sh。
-ro.oplus.panoramic_aod_support=1
+# 不写 ro.oplus.panoramic_aod_support：
+# 这是硬件 AOD 能力标记，不是开关。没有对应硬件的机型被强行声明后，
+# 系统可能显示打不开的全屏 AOD 入口；全屏 AOD 仍由 advanced.sh
+# 在 secure 键真实存在时才写。
+

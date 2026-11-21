@@ -1,6 +1,6 @@
 #!/system/bin/sh
 # ============================================================
-#  ColorOS特性补全 10.0 —— 开机注入
+#  ColorOS特性补全 10.1 —— 开机注入
 #  作者：三重 / 酷安@MieAi
 #
 #  仅做两件事：
@@ -57,7 +57,7 @@ apply() {
 }
 
 {
-  echo "=== ColorOS特性补全 10.0  $(date '+%Y-%m-%d %H:%M:%S') ==="
+  echo "=== ColorOS特性补全 10.1  $(date '+%Y-%m-%d %H:%M:%S') ==="
   echo "机型: ${MODEL:-未知}"
   echo "ColorOS: ${ROMRAW:-未知}"
   echo "分支: 旧版模糊=$ENABLE_LEGACY 晕动=$ENABLE_ANTIDIZZY"

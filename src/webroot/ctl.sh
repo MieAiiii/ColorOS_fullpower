@@ -1,6 +1,6 @@
 #!/system/bin/sh
 # ============================================================
-#  ColorOS特性补全 10.0 —— WebUI 控制脚本
+#  ColorOS特性补全 10.1 —— WebUI 控制脚本
 #  作者：三重 / 酷安@MieAi
 #
 #  WebUI 通过 KernelSU 的 exec 调这里：
@@ -23,6 +23,7 @@ MODDIR=$(cd "${SELF%/*}/.." 2>/dev/null && pwd)
 CFG="$MODDIR/config.conf"
 ADV="$MODDIR/advanced.sh"
 PKG=com.workbuddy.antidizzybridge
+[ -f "$MODDIR/webroot/adapt.sh" ] && . "$MODDIR/webroot/adapt.sh"
 
 cfg_get() {
   [ -f "$CFG" ] || return 0
@@ -42,11 +43,24 @@ status() {
   ROM=$(prop_get ro.build.version.oplusrom)
   ANDROID=$(prop_get ro.build.version.release)
   VERSION=$(grep '^version=' "$MODDIR/module.prop" 2>/dev/null | head -n1 | cut -d= -f2-)
+  ROM_MAJOR=$(adapt_rom_major)
+  ADAPT_MODE=$(adapt_mode "$CFG")
+  ADAPT_EFFECTIVE=$(adapt_effective_mode "$ADAPT_MODE" "$ROM_MAJOR")
 
   echo "MODEL=$MODEL"
   echo "ROM=$ROM"
   echo "ANDROID=$ANDROID"
   echo "VERSION=$VERSION"
+  echo "ROM_MAJOR=$ROM_MAJOR"
+  echo "ADAPT_MODE=$ADAPT_MODE"
+  echo "ADAPT_EFFECTIVE=$ADAPT_EFFECTIVE"
+  adapt_caps_init
+  for f in MATERIAL_BLUR MATERIAL_STROKE DESKTOP_BLUR FULL_AOD AOD_CHARGE \
+           AOD_WORKSHOP ALL_DAY_AOD FOLLOW_HAND GAME_MEMC GAME_COLOR \
+           HDR10P HDR10 HDRVIVID ULTRA_RES MML_COLOR AI_SDR LEGACY MOTION; do
+    eval "_sup=\${ADAPT_SUP_$f}"
+    echo "SUP_${f}=${_sup:-0}"
+  done
 
   # 核心只读状态
   echo "ANIM_LEVEL=$(prop_get persist.sys.oplus.anim_level)"
@@ -139,6 +153,24 @@ apply_all() {
   fi
 }
 
+adapt_mode_set() {
+  VAL=$1
+  case "$VAL" in auto|compat|full) ;; *) echo "ERR=badval"; exit 1 ;; esac
+  [ -f "$CFG" ] || : > "$CFG"
+  TMP="$CFG.tmp.$$"
+  awk -F= -v v="$VAL" '
+    $1=="ADAPT_MODE" { print "ADAPT_MODE=" v; found=1; next }
+    { print }
+    END { if(!found) print "ADAPT_MODE=" v }
+  ' "$CFG" > "$TMP" 2>/dev/null && mv -f "$TMP" "$CFG" 2>/dev/null || {
+    rm -f "$TMP"
+    echo "ERR=writefail"
+    exit 1
+  }
+  echo "ADAPT_MODE=$VAL"
+  echo "ADAPT_EFFECTIVE=$(adapt_effective_mode "$VAL" "$(adapt_rom_major)")"
+}
+
 motion_set() {
   VAL=$1
   case "$VAL" in 0|1) ;; *) echo "ERR=badval"; exit 1 ;; esac
@@ -181,6 +213,7 @@ case "$1" in
   status) status ;;
   set) shift; set_cfg "$1" "$2" ;;
   apply) apply_all ;;
+  adaptmode) adapt_mode_set "$2" ;;
   motion) motion_set "$2" ;;
   motionparam) shift; motion_param "$1" "$2" ;;
   motionreset) motion_reset ;;
@@ -197,3 +230,4 @@ case "$1" in
     echo "ERR=usage"
     ;;
 esac
+
